@@ -1,0 +1,1116 @@
+// src/pages/Experiment.jsx (rev: batch-flow, single-button, flaws-only)
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import supabase from '../supabaseClient'
+
+/* ---------------- 选项字典（保留你已定稿的结构） ---------------- */
+const OVERALL_GROUPS = [
+  {
+    key: 'overall',
+    title: '整体理由 (Overall Reasons)',
+    items: [
+      {
+        key: 'style_unreal',
+        label: '整体画面风格不自然',
+        example: '油画风、素描风、光线怪异、聚焦异常、画面失真、人物皮肤过于光滑如同假人、动物毛发不自然、主体与背景不融合有“贴图感”、主体边缘模糊或异常、AI感过重、人物表情重复、眼神僵硬空洞等'
+      },
+      {
+        key: 'detail_missing',
+        label: '画面细节缺失严重',
+        example: '人物面部模糊怪异、建筑细节缺失、自然风景细节缺失、大片文字糊成一团等'
+      },
+      {
+        key: 'many_subject_abnormal',
+        label: '大量主体异常',
+        example: '多个人的肢体结构或数量异常、多人互动动作不协调、多个动物有多头或多肢体、每一只手的手指数量和手部结构都怪异、画面中多个人或动物的身材比例异常、物品的整体材质或纹理不真实等'
+      },
+      {
+        key: 'many_composition_abnormal',
+        label: '大量组合异常',
+        example: '画面中大量遮挡、透视关系异常、大量肢体横穿或断裂等'
+      },
+      {
+        key: 'physics_illogical',
+        label: '不符合现实世界物理逻辑',
+        example: '大量车辆在道路逆行、斑马线规划错误、车辆停在停车场边缘等'
+      },
+    ]
+  }
+]
+const FLAW_GROUPS = [
+  {
+    key: 'face',
+    title: '面部问题',
+    items: [
+      { key: 'eye_structure', label: '眼部结构或位置异常', example: '眼球大小、双眼皮形状、睫毛形状' },
+      { key: 'eye_gaze', label: '眼神空洞/注视方向不合理' },
+      { key: 'nose_structure', label: '鼻子结构或位置异常' },
+      { key: 'mouth_structure', label: '嘴部结构或位置异常' },
+      { key: 'teeth_structure', label: '牙齿结构或数量异常' },
+      { key: 'ear_structure', label: '耳朵结构或位置异常' },
+      { key: 'ear_count', label: '耳朵数量异常' },
+      { key: 'eyebrow_shape', label: '眉毛形状怪异' },
+      { key: 'feature_mismatch', label: '特征不符', example: '男头女体、猫长出了马的耳朵' },
+      { key: 'face_repetition', label: '面部重复', example: '图片中不同人的面部完全一样' },
+    ],
+  },
+  {
+    key: 'hair',
+    title: '毛发问题',
+    items: [
+      { key: 'hair_shape', label: '头发或毛发形状/纹理异常', example: '不连续、断裂、有断裂感' },
+      { key: 'hair_texture', label: '头发或毛发质感不真实' },
+    ],
+  },
+  {
+    key: 'hands',
+    title: '手部问题',
+    items: [
+      { key: 'finger_count', label: '手指数量异常' },
+      { key: 'hand_pose', label: '手部姿势不自然或不可能' },
+      { key: 'nail_detail', label: '指甲/皮纹细节异常' },
+      { key: 'hand_structure', label: '手部结构异常' },
+    ],
+  },
+  {
+    key: 'body',
+    title: '身体问题',
+    items: [
+      {
+        key: 'body_structure',
+        label: '身体结构异常',
+        example: '关节角度不合理、足背过厚、脚趾形状畸形、鸟类翅膀断裂、斑马身体花纹模糊或走向异常等',
+      },
+      {
+        key: 'body_part_count',
+        label: '身体部位数量异常',
+        example: '人类肢体数量异常、动物出现多个头部等',
+      },
+      {
+        key: 'body_proportion',
+        label: '身体比例不自然',
+        example: '脖子过长/肩膀过宽或过窄/四肢过长或过短/上下半身比例失调/四肢粗细异常等',
+      },
+    ],
+  },
+  {
+    key: 'objects',
+    title: '物体问题',
+    items: [
+      {
+        key: 'object_structure',
+        label: '物体结构异常',
+        example: '衣物纹理异常或不连续、饰品突然断裂、弯曲、扭曲、地面塌陷、树木折断',
+      },
+      {
+        key: 'object_position',
+        label: '物体出现位置异常',
+        example: '耳饰戴在手上、乐高积木悬空',
+      },
+      {
+        key: 'object_scale',
+        label: '物体大小/比例不合理、不自然、不协调',
+      },
+      {
+        key: 'object_color',
+        label: '颜色分布异常',
+        example: '色块突变、不均匀',
+      },
+      {
+        key: 'object_material',
+        label: '材质表现不真实',
+        example: '金属反射、玻璃、布料',
+      },
+    ],
+  },
+  {
+    key: 'others',
+    title: '其他问题',
+    items: [
+      {
+        key: 'lighting_shadow',
+        label: '光照/阴影异常',
+        example: '光线方向奇怪、仅一处亮/暗、阴影不合理、反向或漂浮阴影、聚焦异常、局部虚焦',
+      },
+      {
+        key: 'blur_detail',
+        label: '模糊或细节缺失',
+        example: '文字/图案模糊不清、眼部细节缺失、牙齿模糊不清、耳朵内部结构模糊不清、霓虹灯模糊一片等',
+      },
+      {
+        key: 'odd_structures',
+        label: '出现突兀、不相关的结构',
+      },
+      {
+        key: 'subject_edges',
+        label: '主体边缘异常',
+        example: '模糊、与物品或背景融合',
+      },
+      {
+        key: 'physics_logic',
+        label: '不符合现实世界物理逻辑',
+        example: '生肉和熟食混在一起、人在沙滩上穿羽绒服戴围巾',
+      },
+      {
+        key: 'other',
+        label: '其他',
+        hasTextInput: true,
+      },
+    ],
+  },
+]
+
+/* ---------------- 工具 ---------------- */
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
+const deepClone = (o) => JSON.parse(JSON.stringify(o||{}))
+const uid = () => Math.random().toString(36).slice(2,10)
+
+/* ===================================================== */
+export default function Experiment(){
+  const navigate = useNavigate()
+  const { batchNo: batchParam } = useParams()
+  const batchNo = Number(batchParam || localStorage.getItem('current_batch_no') || 1)
+  const participantId = localStorage.getItem('participant_id')
+  const location = useLocation()
+
+  const openTips = () => {
+    try {
+      // Prefer SPA navigation and carry full location for Back
+      navigate('/tips', { state: { from: location } });
+      // Debug footprint to verify clicks are wired
+      // eslint-disable-next-line no-console
+      console.log('[Experiment] openTips click -> navigate("/tips")', { from: location });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[Experiment] openTips fallback to hard redirect', err);
+      window.location.href = '/tips';
+    }
+  };
+
+  // --- 页面状态 ---
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [itemIds, setItemIds] = useState([]) // 分配的 image_id 顺序
+  const [images, setImages] = useState([])   // [{id, url, storage_path}]
+  const [answers, setAnswers] = useState({}) // id -> {saved, skipped, no_flaw, flaws:[], overall:{selected,byGroup}, confidence, comment}
+  const [idx, setIdx] = useState(0)
+
+  // 画布
+  const containerRef = useRef(null)
+  const imgRef = useRef(null)
+  const [scale, setScale] = useState(1)
+  const [offset, setOffset] = useState({x:0,y:0})
+  const [panning, setPanning] = useState(false)
+  const panStart = useRef({x:0,y:0}); const offsetStart = useRef({x:0,y:0}); const movedRef = useRef(false)
+  const [imgRect, setImgRect] = useState(null); const [contRect, setContRect] = useState(null)
+
+  // 圈点草稿 & 弹窗
+  const [draftFlaw, setDraftFlaw] = useState(null)
+  const [flawModalOpen, setFlawModalOpen] = useState(false)
+  const [flawTemp, setFlawTemp] = useState({selected:[], byGroup:{}})
+
+  const [overallOpen, setOverallOpen] = useState(false)
+  const [overallTemp, setOverallTemp] = useState({selected:[], byGroup:{}})
+
+  const [noFlaw, setNoFlaw] = useState(false)
+  const [selectedFlawId, setSelectedFlawId] = useState(null)
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [startedAt, setStartedAt] = useState(null)
+
+  const current = images[idx]
+  const total = images.length
+  const completedCount = useMemo(()=>Object.values(answers).filter(a=>a?.saved && !a?.skipped).length,[answers])
+  const skippedCount = useMemo(()=>Object.values(answers).filter(a=>a?.skipped).length,[answers])
+  const progress = total ? Math.round((completedCount/total)*100) : 0
+  const allDone = total>0 && completedCount===total
+
+  /* ---------------- 加载分配的题目（按批次） ---------------- */
+  useEffect(()=>{
+    (async()=>{
+      try{
+        if(!participantId){ navigate('/',{replace:true}); return }
+        setLoading(true); setError(null)
+
+        // 1) 拿到该用户该批次的 item_ids（顺序阵列）
+        const { data: ubaRows, error: ubaErr } = await supabase
+          .from('user_batch_assignments')
+          .select('item_ids')
+          .eq('user_id', participantId)
+          .eq('batch_no', batchNo);
+        const uba = (ubaRows && ubaRows[0]) || null;
+        if(ubaErr) throw ubaErr
+        if(!uba?.item_ids || uba.item_ids.length===0){
+          setItemIds([]); setImages([]); setLoading(false)
+          return
+        }
+        const ids = uba.item_ids.map(Number)
+        setItemIds(ids)
+
+        // 2) 拉取图像元数据（保持 ids 顺序）
+        const { data: imgs, error: imgErr } = await supabase
+          .from('images')
+          .select('id, storage_path')
+          .in('id', ids)
+        if(imgErr) throw imgErr
+        const map = new Map(imgs.map(r=>[Number(r.id), r]))
+        const arr = ids.map((id) => {
+          const rawPath = map.get(id)?.storage_path || '';
+          // Keep directory structure. Only strip an occasional leading "images/" (bucket name) if it was stored by mistake.
+          const relPath = String(rawPath).replace(/^images\//, '');
+          const url = supabase.storage.from('images').getPublicUrl(relPath).data.publicUrl;
+          return { id, storage_path: rawPath, rel_path: relPath, url };
+        });
+        setImages(arr);
+
+        // 3) 读取已作答记录（responses）以恢复进度（含 no_flaw / overall / flaws 详情）
+        const { data: resps, error: rErr } = await supabase
+          .from('responses')
+          .select('image_id, is_skip, no_flaw, reasons_overall, reasons_flaws')
+          .eq('participant_id', participantId)
+          .eq('is_practice', false)
+          .in('image_id', ids)
+        if(rErr) throw rErr
+
+        const buildByGroupFromSelected = (selected=[])=>{
+          const by = {}
+          for(const code of selected){
+            const [g,item] = String(code).split(':')
+            if(!g || !item) continue
+            if(!by[g]) by[g]=[]
+            if(!by[g].includes(item)) by[g].push(item)
+          }
+          return by
+        }
+
+        const a = {}
+        for(const r of (resps||[])){
+          // 恢复总体理由
+          const overallSelected = Array.isArray(r.reasons_overall) ? r.reasons_overall : []
+          // 恢复圈点理由，支持 other_text
+          const flaws = Array.isArray(r.reasons_flaws)
+            ? r.reasons_flaws.map(f => {
+                const sel = Array.isArray(f.reasons) ? f.reasons : []
+                const otherText = typeof f.other_text === 'string' ? f.other_text : ''
+                return {
+                  id: f.id,
+                  px: f.px,
+                  py: f.py,
+                  r: f.r,
+                  reasons: {
+                    selected: sel,
+                    byGroup: buildByGroupFromSelected(sel),
+                    otherText,
+                  },
+                }
+              })
+            : []
+          a[r.image_id] = {
+            saved: !r.is_skip,
+            skipped: !!r.is_skip,
+            no_flaw: !!r.no_flaw,
+            overall: { selected: overallSelected, byGroup: buildByGroupFromSelected(overallSelected) },
+            flaws
+          }
+        }
+        setAnswers(a)
+
+        // 4) 起始索引：第一个未完成的 id
+        let start = 0
+        for(let i=0;i<ids.length;i++){ const id=ids[i]; const ans=a[id]; if(!ans?.saved) { start=i; break } }
+        setIdx(start)
+        setStartedAt(Date.now())
+        setLoading(false)
+      }catch(e){ setError(e?.message||String(e)); setLoading(false) }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[batchNo])
+
+  // 度量
+  useEffect(()=>{
+    const measure=()=>{ if(!imgRef.current||!containerRef.current) return; setImgRect(imgRef.current.getBoundingClientRect()); setContRect(containerRef.current.getBoundingClientRect()); }
+    measure();
+    let ro = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(measure);
+      if (containerRef.current) ro.observe(containerRef.current);
+    }
+    window.addEventListener('resize', measure);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', measure);
+    }
+  },[])
+  // 在缩放/平移/换题后，等布局稳定再重新测量，避免圈点与图像错位
+  useLayoutEffect(() => {
+    if (!imgRef.current || !containerRef.current) return;
+    // 使用 rAF 确保 transform 已应用到布局
+    const id = requestAnimationFrame(() => {
+      const rectImg = imgRef.current.getBoundingClientRect();
+      const rectCont = containerRef.current.getBoundingClientRect();
+      setImgRect(rectImg);
+      setContRect(rectCont);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [scale, offset, idx]);
+  useEffect(()=>{ // 切题重置局部状态（不覆盖 noFlaw）
+    setDraftFlaw(null); setOverallTemp({selected:[],byGroup:{}})
+    setStartedAt(Date.now()); setScale(1); setOffset({x:0,y:0})
+    setSelectedFlawId(null);
+  },[idx])
+
+  // 切题或刷新后，根据已保存记录同步 noFlaw 的勾选状态
+  useEffect(()=>{
+    const curId = images[idx]?.id
+    if(!curId) return
+    const a = answers[curId]
+    setNoFlaw(!!a?.no_flaw)
+  }, [idx, images, answers])
+
+  /* ---------------- 交互：缩放拖拽/圈点 ---------------- */
+  const zoom = (delta, e) => { setScale(s => clamp(s + delta, 0.5, 5)) }
+  const onWheel = (e) => { e.preventDefault(); zoom(e.deltaY > 0 ? -0.15 : 0.15, e) }
+
+  // 鼠标按下：开启拖拽模式 & 记录起点
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    const isImage =
+      e.target === imgRef.current || !!e.target.closest('[data-image-overlay]');
+    if (!isImage) return;
+
+    setPanning(true);
+    panStart.current = { x: e.clientX, y: e.clientY };
+    offsetStart.current = { ...offset };
+    movedRef.current = false;
+  }
+
+  // 鼠标移动：若位移超过阈值则判定为拖拽
+  const onMouseMove = (e) => {
+    if (!panning) return;
+    const dx = e.clientX - panStart.current.x;
+    const dy = e.clientY - panStart.current.y;
+    if (Math.hypot(dx, dy) > 3) movedRef.current = true; // 超过 3px 认为在拖拽
+    setOffset({ x: offsetStart.current.x + dx, y: offsetStart.current.y + dy });
+  }
+
+  // 鼠标抬起：如果在 panning 且没有实际移动 => 视为“单击”，创建草稿点
+  const onMouseUp = (e) => {
+    if (!panning) return;
+
+    if (!movedRef.current && imgRef.current && contRect && imgRect) {
+      const rect = imgRef.current.getBoundingClientRect();
+      const x = e.clientX;
+      const y = e.clientY;
+      const px = clamp((x - rect.left) / rect.width, 0, 1);
+      const py = clamp((y - rect.top) / rect.height, 0, 1);
+
+      // 生成待确认的蓝圈草稿
+      setDraftFlaw({ px, py, r: 0.04 });
+      // 取消当前选中圈（避免误解）
+      setSelectedFlawId(null);
+    }
+
+    setPanning(false);
+  }
+
+  const onMouseLeave = () => setPanning(false)
+
+  const confirmDraftPosition=()=>{ setFlawTemp({selected:[],byGroup:{}}); setFlawModalOpen(true) }
+  const cancelDraft=()=> setDraftFlaw(null)
+  const commitFlaw=()=>{ 
+    if(!current||!draftFlaw) return; 
+    const id=draftFlaw.fromId||uid(); 
+    setAnswers(prev=>{ 
+      const cur=prev[current.id]||{}; 
+      const flaws=[...(cur.flaws||[])]; 
+      if(draftFlaw.fromId){ 
+        const i=flaws.findIndex(f=>f.id===draftFlaw.fromId); 
+        if(i>=0) flaws[i]={...flaws[i], px:draftFlaw.px, py:draftFlaw.py, r:draftFlaw.r, reasons:deepClone(flawTemp)} 
+      } else { 
+        flaws.push({ id, px:draftFlaw.px, py:draftFlaw.py, r:draftFlaw.r, reasons:deepClone(flawTemp) }) 
+      } 
+      return { ...prev, [current.id]: { ...cur, flaws } }
+    });
+    setDraftFlaw(null);
+    setFlawModalOpen(false)
+  }
+
+  // 勾选「无明显破绽」后，清空当前题目的所有总体与细节破绽记录，并同步写入本地 answers[current.id].no_flaw，避免 useEffect 的回填把勾选状态覆盖
+  const toggleNoFlaw = (checked) => {
+    setNoFlaw(checked);
+    if (!current) return;
+
+    // 关闭/取消任何正在进行的圈点与弹窗
+    if (checked) {
+      setDraftFlaw(null);
+      setSelectedFlawId(null);
+      setFlawModalOpen(false);
+      setOverallOpen(false);
+    }
+
+    // 同步到本地 answers，防止因依赖 answers 的 useEffect 把勾选状态覆盖回 false
+    setAnswers(prev => {
+      const cur = prev[current.id] || {};
+      const next = { ...cur, no_flaw: checked };
+      if (checked) {
+        // 勾选时清空总体与细节理由
+        next.overall = { selected: [], byGroup: {} };
+        next.flaws = [];
+      }
+      return { ...prev, [current.id]: next };
+    });
+  };
+  /* ---------------- 保存/跳过 ---------------- */
+  const canSave = useMemo(()=>{
+    if(noFlaw) return true
+    const cur = answers[current?.id]
+    const hasOverall = !!(cur?.overall?.selected?.length)
+    const hasFlaws = (cur?.flaws||[]).length>0
+    return hasOverall || hasFlaws
+  },[answers, current, noFlaw])
+
+  const handleSave = async()=>{
+    if(!current || !participantId) return
+    if(!canSave){ alert('请至少提供一个理由（总体或圈点），或勾选「无明显破绽」。'); return }
+    try{
+      const cur = answers[current.id] || {}
+      const duration_ms = startedAt ? (Date.now()-startedAt) : null
+      const payload = {
+        participant_id: participantId,
+        image_id: Number(current.id),
+        is_practice: false,
+        is_skip: false,
+        no_flaw: !!noFlaw,
+        reasons_overall: cur.overall?.selected || [],
+        reasons_flaws: (cur.flaws || []).map(f => ({
+          id: f.id,
+          px: f.px,
+          py: f.py,
+          r: f.r,
+          reasons: f.reasons?.selected || [],
+          other_text: f.reasons?.otherText || '',
+        })),
+        duration_ms
+      }
+      // 用 UPSERT；若后端没建唯一索引，则 fallback 手动 update/insert
+      let upsertErr=null
+      try{
+        const { error } = await supabase
+          .from('responses')
+          .upsert(payload, { onConflict:'participant_id,image_id,is_practice' })
+          .select('id')
+          .single()
+        if(error) upsertErr=error
+      }catch(e){ upsertErr=e }
+      if(upsertErr){
+        const { data: existRows, error: findErr } = await supabase
+          .from('responses').select('id')
+          .eq('participant_id', participantId)
+          .eq('image_id', Number(current.id))
+          .eq('is_practice', false)
+          .limit(1);
+        const exist = (existRows && existRows[0]) || null;
+        if(findErr && findErr.code!=='PGRST116') throw findErr
+        if(exist?.id){
+          const { error: updErr } = await supabase.from('responses').update(payload).eq('id', exist.id).select('id')
+          if(updErr) throw updErr
+        }else{
+          const { error: insErr } = await supabase.from('responses').insert(payload).select('id').single()
+          if(insErr) throw insErr
+        }
+      }
+      // 本地状态 → 找下一题
+      setAnswers(prev=>{ const updated={...prev, [current.id]:{ ...(prev[current.id]||{}), saved:true, skipped:false, no_flaw: !!noFlaw }}; const next=findNext(idx, itemIds, updated); if(next!=null) setIdx(next); return updated })
+    }catch(e){ console.error('[save error]',e); alert('保存失败：'+(e?.message||String(e))) }
+  }
+  const handleSkip = async()=>{
+    if(!current || !participantId) return
+    try{
+      const payload = { participant_id: participantId, image_id:Number(current.id), is_practice:false, is_skip:true }
+      let upsertErr=null
+      try{ const { error } = await supabase.from('responses').upsert(payload,{ onConflict:'participant_id,image_id,is_practice' }).select('id').single(); if(error) upsertErr=error }catch(e){ upsertErr=e }
+      if(upsertErr){
+        const { data: existRows } = await supabase
+          .from('responses')
+          .select('id')
+          .eq('participant_id', participantId)
+          .eq('image_id', Number(current.id))
+          .eq('is_practice', false)
+          .limit(1);
+        const exist = (existRows && existRows[0]) || null;
+        if (exist?.id) {
+          await supabase.from('responses').update(payload).eq('id', exist.id).select('id');
+        } else {
+          await supabase.from('responses').insert(payload).select('id').single();
+        }
+      }
+      setAnswers(prev=>{ const updated={...prev, [current.id]:{ ...(prev[current.id]||{}), saved:false, skipped:true }}; const next=findNext(idx, itemIds, updated, true); if(next!=null) setIdx(next); return updated })
+    }catch(e){ console.error('[skip error]',e); alert('跳过失败：'+(e?.message||String(e))) }
+  }
+
+  function findNext(curIdx, ids, ans, includeSkipped=false){
+    // 顺着 ids 找第一个未保存的（可忽略或包含 skipped）
+    for(let i=curIdx+1;i<ids.length;i++){ const id=ids[i]; const a=ans[id]; if(!a?.saved && (includeSkipped || !a?.skipped)) return i }
+    for(let i=0;i<=curIdx;i++){ const id=ids[i]; const a=ans[id]; if(!a?.saved && (includeSkipped || !a?.skipped)) return i }
+    return null
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  return (
+    <div style={styles.page}>
+      <header style={styles.header}>
+        <div>Batch {batchNo}</div>
+        <div style={{display:'flex', alignItems:'center', gap:12}}>
+          <ProgressBar percent={progress} />
+          <span style={{color:'#cbd5e1'}}>{completedCount}/{total} · {skippedCount} skipped</span>
+          <button
+            type="button"
+            onClick={openTips}
+            style={{ ...styles.smallBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+            title="查看操作提示与常见问题（Tips）"
+            aria-label="Open tips"
+            data-testid="open-tips-button"
+          >
+            Tips
+          </button>
+          <button style={styles.smallBtn} onClick={()=>setReviewOpen(true)}>Review</button>
+          <button style={styles.smallBtn} onClick={()=>navigate(`/result?batch=${batchNo}`)}>Exit</button>
+          <button style={{...styles.primaryBtn, opacity: allDone?1:.5}} disabled={!allDone} onClick={()=>navigate('/menu')}>Finish Batch</button>
+        </div>
+      </header>
+
+      <main style={styles.centerWrap}>
+        <section style={styles.card}>
+          {loading && <div style={{padding:40, textAlign:'center'}}>Loading…</div>}
+          {error && <div style={errBox}>加载失败：{String(error)}</div>}
+
+          {!loading && !error && total===0 && (
+            <div style={{padding:40, textAlign:'center', color:'#94a3b8'}}>
+              未找到此批次的分配。请返回菜单。
+            </div>
+          )}
+
+          {!loading && !error && total>0 && current && (
+            <>
+              <div style={styles.metaRow}>
+                <button style={styles.navBtn} disabled={idx===0} onClick={()=>setIdx(i=>Math.max(0,i-1))}>◀ Prev</button>
+                <div style={{fontWeight:700}}>Item {idx+1} / {total}</div>
+                <button style={styles.navBtn} disabled={idx===total-1} onClick={()=>setIdx(i=>Math.min(total-1,i+1))}>Next ▶</button>
+              </div>
+
+              {/* 左：查看器 */}
+              <div style={viewer.wrap}>
+                <div
+                  ref={containerRef}
+                  style={viewer.container}
+                  onWheel={onWheel}
+                  onMouseDown={onMouseDown}
+                  onMouseMove={onMouseMove}
+                  onMouseUp={onMouseUp}
+                  onMouseLeave={onMouseLeave}
+                >
+                  <img
+                    ref={imgRef}
+                    src={current.url}
+                    alt={current.id}
+                    draggable={false}
+                    onError={(e)=>{
+                      try{
+                        // Try one-time fallback: remove "-<id>" right before the extension and retry
+                        const rp = current.rel_path || '';
+                        const suffix = `-${current.id}`;
+                        if (rp.includes(suffix)){
+                          const altRel = rp.replace(new RegExp(`-${current.id}(?=\\.[A-Za-z0-9]+$)`), '');
+                          if (altRel && altRel !== rp){
+                            const altUrl = supabase.storage.from('images').getPublicUrl(altRel).data.publicUrl;
+                            // Prevent infinite loop by removing handler before swap
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = altUrl;
+                          }
+                        }
+                      }catch(err){ /* noop */ }
+                    }}
+                    style={{
+                      ...viewer.image,
+                      transform: `translate3d(${offset.x}px,${offset.y}px,0) scale(${scale})`,
+                      cursor: panning ? 'grabbing' : 'crosshair'
+                    }}
+                  />
+                  <div style={viewer.overlay} data-image-overlay />
+
+                  {(answers[current.id]?.flaws || []).map(f => {
+                    const isSel = selectedFlawId === f.id;
+                    const style = ringStyle(
+                      f,
+                      imgRect,
+                      contRect,
+                      isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
+                      isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
+                    );
+                    return <div key={f.id} style={style} title="flaw" />;
+                  })}
+                  {draftFlaw && (
+                    <div
+                      style={ringStyle(
+                        draftFlaw,
+                        imgRect,
+                        contRect,
+                        HIGHLIGHT_YELLOW,
+                        HIGHLIGHT_YELLOW_FILL
+                      )}
+                    />
+                  )}
+
+                  {/* 提示仍在容器内，但与工具条无重叠 */}
+                  <div style={viewer.hint}>滚轮缩放，拖拽平移；单击添加圈点 → 确认位置后选择理由</div>
+                </div>
+                {/* 工具条移到容器下方左侧，横向排列，不遮挡图片 */}
+                <div style={viewer.toolbarRow}>
+                  <button aria-label="Zoom in" style={viewer.fab} onClick={()=>setScale(s=>clamp(s+0.15,0.5,5))}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="21" y1="21" x2="17" y2="17" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="11" y1="8" x2="11" y2="14" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="8" y1="11" x2="14" y2="11" stroke="#e2e8f0" strokeWidth="2"/>
+                    </svg>
+                  </button>
+                  <button aria-label="Zoom out" style={viewer.fab} onClick={()=>setScale(s=>clamp(s-0.15,0.5,5))}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="21" y1="21" x2="17" y2="17" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="8" y1="11" x2="14" y2="11" stroke="#e2e8f0" strokeWidth="2"/>
+                    </svg>
+                  </button>
+                  <button aria-label="Reset view" style={viewer.fab} onClick={()=>{setScale(1); setOffset({x:0,y:0})}}>Reset</button>
+                </div>
+              </div>
+
+              {/* 右：表单面板 */}
+              <div style={panel.panel}>
+                {/* 顶部固定：无明显破绽 */}
+                <div style={panel.stickyTop}>
+                  <label style={{display:'flex', alignItems:'center', gap:8}}>
+                    <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> 无明显破绽（允许 0 点 0 理由）
+                  </label>
+                </div>
+
+                {/* Overall 条目（按是否已有记录切换 Add / Edit+Clear） */}
+                <div style={panel.row}>
+                  <div style={panel.head}>总体理由</div>
+                  <div style={{display:'flex', gap:8}}>
+                    {(() => {
+                      const curOverall = answers[current.id]?.overall || { selected:[], byGroup:{} }
+                      const hasOverall = (curOverall.selected?.length || 0) > 0
+                      if (!hasOverall) {
+                        return (
+                          <button
+                            style={styles.smallBtn}
+                            onClick={() => { setOverallTemp({ selected:[], byGroup:{} }); setOverallOpen(true) }}
+                          >
+                            Add
+                          </button>
+                        )
+                      }
+                      return (
+                        <>
+                          <button
+                            style={styles.smallBtn}
+                            onClick={() => { setOverallTemp(deepClone(curOverall)); setOverallOpen(true) }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            style={styles.smallBtn}
+                            onClick={() => setAnswers(prev => ({
+                              ...prev,
+                              [current.id]: { ...(prev[current.id] || {}), overall: { selected:[], byGroup:{} } }
+                            }))}
+                          >
+                            Clear
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} 项</div>
+
+                {/* Flaws 列表 */}
+                {(answers[current.id]?.flaws||[]).map((f,i)=> (
+                  <div key={f.id} style={panel.item}>
+                    <div style={{fontWeight:700}}>Flaw #{i+1}</div>
+                    <div style={{display:'flex', gap:8}}>
+                      <button style={styles.smallBtn} onClick={()=> setSelectedFlawId(f.id)}>{selectedFlawId===f.id? 'Selected' : 'Select'}</button>
+                      <button style={styles.smallBtn} onClick={()=>{ setFlawTemp(deepClone(f.reasons||{selected:[],byGroup:{}})); setDraftFlaw({px:f.px,py:f.py,r:f.r, fromId:f.id}); setFlawModalOpen(true) }}>Edit</button>
+                      <button style={styles.smallBtn} onClick={()=> setAnswers(prev=>{ const cur=prev[current.id]||{}; const nextFlaws=(cur.flaws||[]).filter(x=>x.id!==f.id); if(selectedFlawId===f.id) setSelectedFlawId(null); return { ...prev, [current.id]: { ...cur, flaws: nextFlaws } } }) }>Delete</button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Draft 提示 */}
+                {draftFlaw && (
+                  <div style={{...panel.item, borderStyle:'dashed'}}>
+                    <div>点击位置待确认</div>
+                    <div style={{display:'flex', gap:8}}>
+                      <button style={styles.smallBtn} onClick={confirmDraftPosition}>Confirm</button>
+                      <button style={styles.smallBtn} onClick={()=>{ setDraftFlaw(null) }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 新增：底部按钮前的 spacer */}
+                <div style={{flex:1}} />
+
+                {/* 底部固定：操作按钮 */}
+                <div style={panel.stickyBottom}>
+                  <button style={styles.secondaryBtn} onClick={handleSkip}>Skip</button>
+                  <button style={{...styles.primaryBtn, opacity:canSave?1:.5}} disabled={!canSave} onClick={handleSave}>Save & Next</button>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+
+      {/* Overall 弹窗 */}
+      {overallOpen && current && (
+        <OverallModal temp={overallTemp} setTemp={setOverallTemp} onClose={()=>setOverallOpen(false)} onConfirm={()=>{ setAnswers(prev=>({ ...prev, [current.id]:{ ...(prev[current.id]||{}), overall: deepClone(overallTemp) } })); setOverallOpen(false) }} />
+      )}
+
+      {/* Flaw 弹窗 */}
+      {flawModalOpen && current && (
+        <FlawReasonsModal temp={flawTemp} setTemp={setFlawTemp} onClose={()=>setFlawModalOpen(false)} onConfirm={commitFlaw} />
+      )}
+
+      {reviewOpen && (
+        <ReviewModal
+          itemIds={itemIds}
+          answers={answers}
+          currentIndex={idx}
+          onJump={(i)=>{ setIdx(i); setReviewOpen(false) }}
+          onClose={()=>setReviewOpen(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/* ---------------- 小组件 ---------------- */
+function ProgressBar({percent}){ return (<div style={{width:160,height:10,background:'#0b1220',borderRadius:999,overflow:'hidden'}}><div style={{width:`${percent}%`,height:'100%',background:'#22c55e'}} /></div>) }
+
+function OverallModal({ temp, setTemp, onClose, onConfirm }) {
+  const toggle = (g, item) => {
+    setTemp(prev => {
+      const set = new Set(prev.selected || []);
+      const code = `${g}:${item.key}`;
+      set.has(code) ? set.delete(code) : set.add(code);
+      const by = { ...(prev.byGroup || {}) };
+      const s = new Set(by[g] || []);
+      s.has(item.key) ? s.delete(item.key) : s.add(item.key);
+      by[g] = Array.from(s);
+      return { selected: Array.from(set), byGroup: by }
+    })
+  }
+  const count = temp?.selected?.length || 0
+  return (
+    <div style={modal.backdrop} onClick={onClose}>
+      <div style={modal.box} onClick={e => e.stopPropagation()}>
+        <div style={modal.title}>Overall Reasons（多选）</div>
+        <div style={{ maxHeight: '60vh', overflow: 'auto', paddingRight: 6 }}>
+          {OVERALL_GROUPS.map(g => (
+            <div key={g.key} style={{ marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, marginBottom: 6 }}>{g.title}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {g.items.map(it => {
+                  const code = `${g.key}:${it.key}`;
+                  const active = temp?.selected?.includes(code);
+                  return (
+                    <label
+                      key={it.key}
+                      style={{
+                        border: active ? '2px solid #2563eb' : '1px solid #475569',
+                        borderRadius: 8,
+                        padding: '8px 10px',
+                        cursor: 'pointer',
+                        background: active ? '#0b1220' : '#111827',
+                        color: '#e2e8f0',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={active}
+                          onChange={() => toggle(g.key, it)}
+                          style={{ marginRight: 8 }}
+                        />
+                        <div>{it.label}</div>
+                      </div>
+                      {it.example && (
+                        <div style={{ fontSize: 12, marginTop: 2, color: '#cbd5e1', width: '100%' }}>
+                          （{it.example}）
+                        </div>
+                      )}
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+          <button style={styles.smallBtn} onClick={onClose}>Cancel</button>
+          <button style={{ ...styles.primaryBtn, opacity: count ? 1 : .5 }} disabled={!count} onClick={onConfirm}>Confirm ({count})</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
+  const [openGroups, setOpenGroups] = useState(() => {
+    const init = {}
+    FLAW_GROUPS.forEach(g => { init[g.key] = false })
+    return init
+  })
+
+  const toggle=(g,item)=>{
+    setTemp(prev=>{
+      const set = new Set(prev.selected || [])
+      const code = `${g}:${item.key}`
+      set.has(code) ? set.delete(code) : set.add(code)
+
+      const by = { ...(prev.byGroup || {}) }
+      const s = new Set(by[g] || [])
+      s.has(item.key) ? s.delete(item.key) : s.add(item.key)
+      by[g] = Array.from(s)
+
+      return {
+        selected: Array.from(set),
+        byGroup: by,
+        otherText: prev.otherText || '',
+      }
+    })
+  }
+
+  const toggleGroupOpen = (gKey) => {
+    setOpenGroups(prev => ({ ...prev, [gKey]: !prev[gKey] }))
+  }
+
+  const count = temp?.selected?.length || 0
+  const otherText = temp?.otherText || ''
+
+  return (
+    <div style={modal.backdrop} onClick={onClose}>
+      <div style={{...modal.box,width:'min(95vw,940px)'}} onClick={e=>e.stopPropagation()}>
+        <div style={modal.title}>Flaw Reasons（多选）</div>
+        <div style={{maxHeight:'60vh',overflow:'auto',paddingRight:6}}>
+          {FLAW_GROUPS.map(g=> {
+            const open = openGroups[g.key]
+            return (
+              <div key={g.key} style={{marginBottom:12}}>
+                <button
+                  type="button"
+                  onClick={()=>toggleGroupOpen(g.key)}
+                  style={{
+                    width:'100%',
+                    display:'flex',
+                    alignItems:'center',
+                    justifyContent:'flex-start',
+                    gap:6,
+                    background:'transparent',
+                    border:'none',
+                    color:'#e2e8f0',
+                    cursor:'pointer',
+                    padding:'4px 0',
+                    fontWeight:800,
+                  }}
+                >
+                  <span style={{width:16}}>{open ? '▼' : '▶'}</span>
+                  <span>{g.title}</span>
+                </button>
+                {open && (
+                  <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4}}>
+                    {g.items.map(it=>{
+                      const code=`${g.key}:${it.key}`
+                      const active=temp?.selected?.includes(code)
+                      return (
+                        <label
+                          key={it.key}
+                          style={{
+                            border:active?'2px solid #2563eb':'1px solid #475569',
+                            borderRadius:8,
+                            padding:'8px 10px',
+                            cursor:'pointer',
+                            background:active?'#0b1220':'#111827',
+                            color:'#e2e8f0',
+                            display:'flex',
+                            flexDirection:'column',
+                            alignItems:'flex-start',
+                          }}
+                        >
+                          <div style={{display:'flex',alignItems:'center'}}>
+                            <input
+                              type="checkbox"
+                              checked={active}
+                              onChange={()=>toggle(g.key,it)}
+                              style={{marginRight:8}}
+                            />
+                            <div>{it.label}</div>
+                          </div>
+                          {it.example && (
+                            <div style={{ fontSize: 12, marginTop: 2, color: '#cbd5e1', width: '100%' }}>
+                              （{it.example}）
+                            </div>
+                          )}
+                          {it.hasTextInput && active && (
+                            <textarea
+                              rows={3}
+                              placeholder="请简要说明其他问题…"
+                              value={otherText}
+                              onChange={e =>
+                                setTemp(prev => ({
+                                  ...prev,
+                                  otherText: e.target.value || '',
+                                }))
+                              }
+                              style={{
+                                marginTop: 6,
+                                width: '100%',
+                                fontSize: 12,
+                                padding: '6px 8px',
+                                borderRadius: 6,
+                                border: '1px solid #475569',
+                                background: '#020617',
+                                color: '#e2e8f0',
+                                resize: 'vertical',
+                              }}
+                            />
+                          )}
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <div style={{display:'flex',justifyContent:'flex-end',gap:8,marginTop:12}}>
+          <button style={styles.smallBtn} onClick={onClose}>Cancel</button>
+          <button style={{...styles.primaryBtn, opacity:count?1:.5}} disabled={!count} onClick={onConfirm}>Confirm ({count})</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ---------------- 样式 ---------------- */
+const HIGHLIGHT_YELLOW = '#fff200'; // Bright Word-like yellow
+const HIGHLIGHT_YELLOW_FILL = 'rgba(255, 242, 0, 0.6)'; // stronger fill for draft
+const HIGHLIGHT_YELLOW_FILL_SOFT = 'rgba(255, 242, 0, 0.4)'; // softer fill for saved rings
+
+const HIGHLIGHT_RED = '#ff0000'; // Word-like red highlight
+const HIGHLIGHT_RED_FILL = 'rgba(255, 0, 0, 0.55)';
+const styles={
+  page:{ minHeight:'100vh', width:'100vw', background:'linear-gradient(90deg,#0b1220,#0f172a)', display:'flex', flexDirection:'column', color:'#e2e8f0' },
+  header:{ background:'#0b1220', color:'#e2e8f0', padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', fontWeight:800 },
+  centerWrap:{ flex:1, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px 16px' },
+  card:{ width:'100%', maxWidth:1200, background:'#0f172a', borderRadius:12, boxShadow:'0 10px 30px rgba(0,0,0,.35)', padding:16, display:'grid', gridTemplateColumns:'1fr 380px', gap:16 },
+  metaRow:{ gridColumn:'1 / -1', display:'flex', alignItems:'center', justifyContent:'space-between', color:'#cbd5e1', marginBottom:4 },
+  instructionBox:{ gridColumn:'1 / -1', background:'#0b1220', border:'1px solid #22304a', borderRadius:8, padding:'10px 12px', color:'#cbd5e1', margin:'6px 0 8px' },
+  navBtn:{ padding:'6px 10px', borderRadius:8, border:'1px solid #334155', background:'#111827', color:'#e2e8f0', cursor:'pointer' },
+  secondaryBtn:{ padding:'10px 16px', borderRadius:8, border:'1px solid #64748b', background:'#0b1220', color:'#e2e8f0', cursor:'pointer' },
+  primaryBtn:{ padding:'10px 16px', borderRadius:8, border:'none', background:'#2563eb', color:'#fff', fontWeight:800, cursor:'pointer' },
+  smallBtn:{ padding:'6px 10px', borderRadius:6, border:'1px solid #475569', background:'#111827', color:'#e2e8f0', cursor:'pointer' }
+}
+const viewer={
+  wrap:{ display:'flex', flexDirection:'column', alignItems:'flex-start' },
+  container:{ position:'relative', width:'100%', height:'min(70vh,720px)', background:'#111827', borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', userSelect:'none' },
+  image:{ maxWidth:'100%', maxHeight:'100%', willChange:'transform', transition:'transform 60ms linear' },
+  overlay:{ position:'absolute', inset:0 },
+  fab:{ padding:'8px 10px', borderRadius:8, border:'1px solid #475569', background:'#0b1220cc', color:'#e2e8f0', cursor:'pointer', fontWeight:800, minWidth:56 },
+  toolbarRow:{ display:'flex', gap:8, marginTop:8 },
+  hint:{ position:'absolute', left:12, bottom:12, color:'#cbd5e1', background:'#0b1220cc', padding:'6px 8px', borderRadius:6, fontSize:12 }
+}
+const panel={
+  panel:{ background:'#0b1220', border:'1px solid #22304a', borderRadius:8, padding:12, display:'flex', flexDirection:'column', height:'min(70vh,720px)', overflow:'auto', position:'relative' },
+  row:{ display:'flex', alignItems:'center', justifyContent:'space-between' },
+  head:{ fontWeight:800, color:'#cbd5e1' },
+  note:{ fontSize:12, color:'#9ca3af', marginTop:4 },
+  item:{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#0f172a', border:'1px solid #334155', borderRadius:8, padding:'8px 10px', marginTop:6 },
+  stickyTop:{ position:'sticky', top:0, background:'#0b1220', paddingBottom:8, marginBottom:8, zIndex:1, borderBottom:'1px solid #22304a' },
+  stickyBottom:{ position:'sticky', bottom:0, display:'flex', justifyContent:'space-between', gap:12, paddingTop:10, marginTop:12, background:'#0b1220', zIndex:1, borderTop:'1px solid #22304a' }
+}
+const modal={
+  backdrop:{ position:'fixed', inset:0, background:'rgba(0,0,0,.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:50 },
+  box:{ width:'min(95vw, 920px)', background:'#0f172a', color:'#e2e8f0', borderRadius:12, padding:16, boxShadow:'0 10px 30px rgba(0,0,0,.5)' },
+  title:{ fontWeight:800, marginBottom:12 }
+}
+const errBox={ margin:'12px 0', padding:'10px 12px', border:'1px solid #ef4444', background:'rgba(239,68,68,.12)', color:'#fecaca', borderRadius:8 }
+
+function ringStyle(f, imgRect, contRect, stroke = '#ef4444', fill = 'transparent') {
+  if (!imgRect || !contRect) return { display: 'none' };
+  const cx = imgRect.left - contRect.left + f.px * imgRect.width;
+  const cy = imgRect.top - contRect.top + f.py * imgRect.height;
+  const rPx = (f.r || 0.04) * Math.min(imgRect.width, imgRect.height);
+
+  return {
+    position: 'absolute',
+    left: cx - rPx,
+    top: cy - rPx,
+    width: rPx * 2,
+    height: rPx * 2,
+    borderRadius: '50%',
+    border: `2px solid ${stroke}`,
+    background: fill,
+    pointerEvents: 'none',
+    boxShadow: `0 0 12px ${stroke}AA`, // slight glow for highlighter effect
+  };
+}
+function ReviewModal({ itemIds, answers, currentIndex, onJump, onClose }) {
+  const getStatus = (i) => {
+    if (i === currentIndex) return 'current'
+    const id = itemIds[i]
+    const a = answers[id]
+    if (a?.saved && !a?.skipped) return 'done'
+    return 'todo' // 未完成或被跳过
+  }
+  const colorFor = (s) => s==='done' ? '#22c55e' : s==='current' ? '#f59e0b' : '#ef4444'
+  const boxStyle = (s) => ({
+    width: 28, height: 28, borderRadius: 6,
+    display:'flex', alignItems:'center', justifyContent:'center',
+    border: `1px solid ${colorFor(s)}`, color: colorFor(s), background: 'transparent',
+    cursor:'pointer', fontWeight:700
+  })
+  return (
+    <div style={modal.backdrop} onClick={onClose}>
+      <div style={{...modal.box, width:'min(95vw, 720px)'}} onClick={e=>e.stopPropagation()}>
+        <div style={modal.title}>Review</div>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(28px, 1fr))', gap:8, maxHeight:'50vh', overflow:'auto', padding:'8px 0'}}>
+          {itemIds.map((_, i) => {
+            const s = getStatus(i)
+            return (
+              <button key={i} style={boxStyle(s)} onClick={()=>onJump(i)} title={`Go to ${i+1}`}>
+                {i+1}
+              </button>
+            )
+          })}
+        </div>
+        <div style={{display:'flex', gap:12, justifyContent:'flex-end', marginTop:12}}>
+          <div style={{display:'flex', alignItems:'center', gap:6, color:'#e2e8f0'}}>
+            <span style={{width:12,height:12,background:'#22c55e',borderRadius:2}}></span> Done
+          </div>
+          <div style={{display:'flex', alignItems:'center', gap:6, color:'#e2e8f0'}}>
+            <span style={{width:12,height:12,background:'#ef4444',borderRadius:2}}></span> Todo/Skipped
+          </div>
+          <div style={{display:'flex', alignItems:'center', gap:6, color:'#e2e8f0'}}>
+            <span style={{width:12,height:12,background:'#f59e0b',borderRadius:2}}></span> Current
+          </div>
+          <button style={styles.smallBtn} onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,8 @@
+/* 全局重置，确保容器满屏且无默认外边距 */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+
+/* 可选：基础字体与背景过渡更丝滑 */
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
