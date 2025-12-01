@@ -21,7 +21,8 @@ export default function Introduction() {
     return () => document.removeEventListener('visibilitychange', h)
   }, [])
 
-  const VIDEO_SRC = '/intro.mp4' // 放在 public/intro.mp4
+  // 如果设置了环境变量，则优先使用线上地址（例如 Supabase Storage 的 public URL）；否则回退到本地 public/intro.mp4
+  const VIDEO_SRC = import.meta.env.VITE_INTRO_VIDEO_URL || '/intro.mp4'
 
   const handleLoaded = () => {
     setErrMsg('')
@@ -40,7 +41,7 @@ export default function Introduction() {
   }
 
   const handleError = () => {
-    setErrMsg('视频加载失败。请确认 /public/intro.mp4 存在且为 H.264/AAC 编码的 MP4。')
+    setErrMsg('视频加载失败。请确认视频地址有效：若使用本地文件，请保证 /public/intro.mp4 存在且为 H.264/AAC 编码的 MP4；若使用线上链接，请检查环境变量 VITE_INTRO_VIDEO_URL 是否配置正确。')
   }
 
   const percent = duration ? Math.min(100, Math.floor((current / duration) * 100)) : 0

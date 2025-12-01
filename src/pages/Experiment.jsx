@@ -168,10 +168,26 @@ const uid = () => Math.random().toString(36).slice(2,10)
 /* ===================================================== */
 export default function Experiment(){
   const navigate = useNavigate()
-  const { batchNo: batchParam } = useParams()
-  const batchNo = Number(batchParam || localStorage.getItem('current_batch_no') || 1)
+  const params = useParams()
+
+  // 支持多种路由写法：/batch/:batchNo 或 /batch/:id 或 /batch/:batch
+  const rawBatch =
+    params.batchNo ??
+    params.id ??
+    params.batch ??
+    localStorage.getItem('current_batch_no') ??
+    1
+
+  const batchNo = Number(rawBatch) || 1
   const participantId = localStorage.getItem('participant_id')
   const location = useLocation()
+
+  // 保持 current_batch_no 与当前 batch 一致（方便刷新后恢复对应批次）
+  useEffect(() => {
+    if (!Number.isNaN(batchNo)) {
+      localStorage.setItem('current_batch_no', String(batchNo))
+    }
+  }, [batchNo])
 
   const openTips = () => {
     try {

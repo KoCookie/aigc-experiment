@@ -166,7 +166,7 @@ const deepClone = (o) => JSON.parse(JSON.stringify(o||{}))
 const uid = () => Math.random().toString(36).slice(2,10)
 
 // 标准答案的参与者 ID
-const GOLD_PARTICIPANT_ID = 'b7cc174d-68bb-4afe-9e52-212b2458743e' // 标准答案使用的参与者 ID（user2）
+const GOLD_PARTICIPANT_ID = '625198e2-aaca-4522-8121-2b0d468422ca' // 标准答案使用的参与者 ID（practice_tracher）
 
 // 将 selected codes 转为分组结构
 const buildByGroupFromSelected = (selected = []) => {
@@ -623,6 +623,27 @@ export default function Practice(){
     return null
   }
 
+  const handleFinishPracticeAndGoToMenu = async () => {
+    if (!participantId) {
+      navigate('/', { replace: true });
+      return;
+    }
+    try {
+      await supabase
+        .from('participants')
+        .update({
+          practice_passed: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', participantId);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[practice] failed to mark practice_passed', e);
+    }
+    setDoneOpen(false);
+    navigate('/menu');
+  };
+
   /* ---------------- 渲染 ---------------- */
   return (
     <div style={styles.page}>
@@ -705,9 +726,10 @@ export default function Practice(){
                   />
                   <div style={viewer.overlay} data-image-overlay />
 
-                  {/* 根据模式渲染圈点：answer/mine = 用户圈点，standard = 标准答案圈点 */}
-                  {viewMode === 'standard'
-                    ? (goldAnswers[current.id]?.flaws || []).map((f, i) => {
+                  {/* 根据模式渲染圈点：支持 standard, mine, answer 三种模式 */}
+                  {(() => {
+                    if (viewMode === 'standard') {
+                      return (goldAnswers[current.id]?.flaws || []).map((f, i) => {
                         const baseStyle = ringStyle(
                           f,
                           imgRect,
@@ -725,27 +747,52 @@ export default function Practice(){
                           color: '#ffffff',
                         }
                         return (
-                          <div
-                            key={f.id || i}
-                            style={style}
-                            title={`gold-flaw-${i + 1}`}
-                          >
+                          <div key={f.id || i} style={style} title={`gold-flaw-${i + 1}`}>
                             {i + 1}
                           </div>
                         )
                       })
-                    : (answers[current.id]?.flaws || []).map(f => {
-                        const isSel = selectedFlawId === f.id
-                        const style = ringStyle(
+                    }
+
+                    if (viewMode === 'mine') {
+                      return (answers[current.id]?.flaws || []).map((f, i) => {
+                        const baseStyle = ringStyle(
                           f,
                           imgRect,
                           contRect,
-                          isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
-                          isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
+                          HIGHLIGHT_YELLOW,
+                          HIGHLIGHT_YELLOW_FILL_SOFT
                         )
-                        return <div key={f.id} style={style} title="flaw" />
+                        const style = {
+                          ...baseStyle,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: '#ffffff',
+                        }
+                        return (
+                          <div key={f.id || i} style={style} title={`my-flaw-${i + 1}`}>
+                            {i + 1}
+                          </div>
+                        )
                       })
-                  }
+                    }
+
+                    // Default answer mode (no numbers)
+                    return (answers[current.id]?.flaws || []).map(f => {
+                      const isSel = selectedFlawId === f.id
+                      const style = ringStyle(
+                        f,
+                        imgRect,
+                        contRect,
+                        isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
+                        isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
+                      )
+                      return <div key={f.id} style={style} title="flaw" />
+                    })
+                  })()}
                   {viewMode === 'answer' && draftFlaw && (
                     <div
                       style={ringStyle(
@@ -1008,10 +1055,7 @@ export default function Practice(){
               </button>
               <button
                 style={styles.primaryBtn}
-                onClick={() => {
-                  setDoneOpen(false)
-                  navigate('/menu')
-                }}
+                onClick={handleFinishPracticeAndGoToMenu}
               >
                 前往正式实验
               </button>

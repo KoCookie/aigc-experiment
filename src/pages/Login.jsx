@@ -100,7 +100,6 @@ export default function Login() {
         localStorage.setItem('participant_name', cleanName)
         localStorage.setItem('participant_email', cleanEmail)
         localStorage.setItem('participant_cohort', cleanCohort)
-        localStorage.setItem('is_new_user', '1')
 
         console.log('[Login] sign up success, navigate to /intro', { pid })
         navigate('/intro', { replace: true })
@@ -140,15 +139,29 @@ export default function Login() {
             .eq('id', existing.id)
         }
 
-        // 4) 本地缓存 + 跳转 Menu（老用户）
+        // 4) 本地缓存
         localStorage.setItem('participant_id', String(existing.id))
         localStorage.setItem('participant_name', cleanName || existing.name || '')
         localStorage.setItem('participant_email', cleanEmail)
         localStorage.setItem('participant_cohort', existing.cohort || cleanCohort || 'test')
-        localStorage.setItem('is_new_user', '0')
 
-        console.log('[Login] login success, navigate to /menu', { id: existing.id })
-        navigate('/menu', { replace: true })
+        // ---- determine where to navigate based on practice completion ----
+        const { data: pracInfo, error: pracErr } = await supabase
+          .from('participants')
+          .select('practice_passed')
+          .eq('id', existing.id)
+          .maybeSingle();
+
+        if (pracErr) throw pracErr;
+
+        if (pracInfo?.practice_passed) {
+          // completed all practice → old user flow
+          navigate('/menu', { replace: true });
+        } else {
+          // not completed practice → continue practice
+          navigate('/practice', { replace: true });
+        }
+        return; // prevent falling through
       }
     } catch (err) {
       console.error(err)
