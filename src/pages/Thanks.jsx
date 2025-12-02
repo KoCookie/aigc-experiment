@@ -33,9 +33,7 @@ export default function Thanks() {
           className="text-lg text-gray-300 leading-relaxed mb-8"
           style={{ color: "rgba(226,232,240,0.9)", lineHeight: 1.8, fontSize: "1.125rem", marginBottom: "2rem" }}
         >
-          您已成功完成本次实验，非常感谢您抽出宝贵的时间配合研究。
-          您的判断与反馈将对我们改进 AI 生成图像的真实性识别研究产生重要帮助。
-          再次感谢您的耐心与支持！
+          您已成功完成本次预实验，非常感谢您抽出宝贵的时间配合。
         </p>
 
         <button

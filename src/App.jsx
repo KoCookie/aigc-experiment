@@ -11,6 +11,7 @@ import {
 import Login from "./pages/Login.jsx";
 import Menu from "./pages/Menu.jsx";
 import Experiment from "./pages/Experiment.jsx";
+import Pilot from "./pages/Pilot.jsx";
 import Practice from "./pages/Practice.jsx";
 import Result from "./pages/Result.jsx";
 import Submit from "./pages/Submit.jsx";
@@ -55,12 +56,13 @@ export default function App() {
 
         {/* Main flow */}
         <Route path="/menu" element={<Menu />} />
+        <Route path="/pilot" element={<Pilot />} />
         <Route path="/batch/:id" element={<Experiment />} />
         <Route path="/practice" element={<Practice />} />
         <Route path="/practice/:id" element={<Navigate to="/practice" replace />} />
         <Route path="/result" element={<Result />} />
         <Route path="/submit" element={<Submit />} />
-        <Route path="/thanks" element={<Thanks />} />
+        <Route path="/pilot-thanks" element={<Thanks />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/reminder" replace />} />

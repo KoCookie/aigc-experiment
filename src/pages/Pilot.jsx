@@ -165,27 +165,11 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
 const deepClone = (o) => JSON.parse(JSON.stringify(o||{}))
 const uid = () => Math.random().toString(36).slice(2,10)
 
-// 标准答案的参与者 ID
-const GOLD_PARTICIPANT_ID = '625198e2-aaca-4522-8121-2b0d468422ca' // 标准答案使用的参与者 ID（practice_tracher）
-
-// 将 selected codes 转为分组结构
-const buildByGroupFromSelected = (selected = []) => {
-  const by = {}
-  for (const code of selected || []) {
-    const [g, item] = String(code).split(':')
-    if (!g || !item) continue
-    if (!by[g]) by[g] = []
-    if (!by[g].includes(item)) by[g].push(item)
-  }
-  return by
-}
-
 /* ===================================================== */
-export default function Practice(){
+export default function Pilot(){
   const navigate = useNavigate()
   const participantId = localStorage.getItem('participant_id')
   const location = useLocation()
-  const participantCohort = localStorage.getItem('participant_cohort') || 'default'
 
   const openTips = () => {
     try {
@@ -229,11 +213,7 @@ export default function Practice(){
   const [noFlaw, setNoFlaw] = useState(false)
   const [selectedFlawId, setSelectedFlawId] = useState(null)
   const [reviewOpen, setReviewOpen] = useState(false)
-  const [doneOpen, setDoneOpen] = useState(false)   // 练习完成弹窗
-  const [viewMode, setViewMode] = useState('answer') // 'answer' | 'standard' | 'mine'
   const [startedAt, setStartedAt] = useState(null)
-
-  const [goldAnswers, setGoldAnswers] = useState({}) // 标准答案：image_id -> { no_flaw, overall, flaws }
 
   const current = images[idx]
   const total = images.length
@@ -242,53 +222,61 @@ export default function Practice(){
   const progress = total ? Math.round((completedCount/total)*100) : 0
   const allDone = total>0 && completedCount===total
 
-  /* ---------------- 加载练习题目（is_practice = true） ---------------- */
-  useEffect(() => {
-    (async () => {
-      try {
-        if (!participantId) { navigate('/', { replace: true }); return }
-        setLoading(true)
-        setError(null)
+  /* ---------------- 加载预实验题目（Pilot：is_pilot = true） ---------------- */
+  useEffect(()=>{
+    (async()=>{
+      try{
+        if(!participantId){ navigate('/',{replace:true}); return }
+        setLoading(true); setError(null)
 
-        // 1) 拉取所有练习图片（is_practice = true）
+        // 1) 直接拉取所有 is_pilot = true 的图像
         const { data: imgs, error: imgErr } = await supabase
           .from('images')
           .select('id, storage_path')
-          .eq('is_practice', true)
+          .eq('is_pilot', true)
           .order('id', { ascending: true })
-        if (imgErr) throw imgErr
+        if(imgErr) throw imgErr
 
-        const ids = (imgs || []).map(row => Number(row.id))
+        if(!imgs || imgs.length === 0){
+          setItemIds([]); setImages([]); setLoading(false)
+          return
+        }
+
+        const ids = imgs.map(r => Number(r.id))
         setItemIds(ids)
 
-        const arr = (imgs || []).map(row => {
-          const rawPath = row.storage_path || ''
+        const arr = imgs.map(r => {
+          const id = Number(r.id)
+          const rawPath = r.storage_path || ''
           const relPath = String(rawPath).replace(/^images\//, '')
           const url = supabase.storage.from('images').getPublicUrl(relPath).data.publicUrl
-          return { id: Number(row.id), storage_path: rawPath, rel_path: relPath, url }
+          return { id, storage_path: rawPath, rel_path: relPath, url }
         })
         setImages(arr)
 
-        // 2a) 读取已作答记录（responses），仅限 practice = true
+        // 2) 读取已作答记录（responses），仅限 is_pilot = true
         const { data: resps, error: rErr } = await supabase
           .from('responses')
           .select('image_id, is_skip, no_flaw, reasons_overall, reasons_flaws')
           .eq('participant_id', participantId)
-          .eq('is_practice', true)
+          .eq('is_practice', false)
+          .eq('is_pilot', true)
           .in('image_id', ids)
-        if (rErr) throw rErr
+        if(rErr) throw rErr
 
-        // 2b) 读取标准答案（gold-standard），使用固定的 GOLD_PARTICIPANT_ID
-        const { data: goldResps, error: gErr } = await supabase
-          .from('responses')
-          .select('image_id, no_flaw, reasons_overall, reasons_flaws')
-          .eq('participant_id', GOLD_PARTICIPANT_ID)
-          .eq('is_practice', true)
-          .in('image_id', ids)
-        if (gErr && gErr.code !== 'PGRST116') throw gErr
+        const buildByGroupFromSelected = (selected=[])=>{
+          const by = {}
+          for(const code of selected){
+            const [g,item] = String(code).split(':')
+            if(!g || !item) continue
+            if(!by[g]) by[g]=[]
+            if(!by[g].includes(item)) by[g].push(item)
+          }
+          return by
+        }
 
         const a = {}
-        for (const r of (resps || [])) {
+        for(const r of (resps||[])){
           const overallSelected = Array.isArray(r.reasons_overall) ? r.reasons_overall : []
           const flaws = Array.isArray(r.reasons_flaws)
             ? r.reasons_flaws.map(f => {
@@ -312,57 +300,21 @@ export default function Practice(){
             skipped: !!r.is_skip,
             no_flaw: !!r.no_flaw,
             overall: { selected: overallSelected, byGroup: buildByGroupFromSelected(overallSelected) },
-            flaws,
+            flaws
           }
         }
         setAnswers(a)
 
-        // 构建标准答案映射
-        const goldMap = {}
-        for (const r of (goldResps || [])) {
-          const overallSelected = Array.isArray(r.reasons_overall) ? r.reasons_overall : []
-          const flaws = Array.isArray(r.reasons_flaws)
-            ? r.reasons_flaws.map(f => {
-                const sel = Array.isArray(f.reasons) ? f.reasons : []
-                const otherText = typeof f.other_text === 'string' ? f.other_text : ''
-                return {
-                  id: f.id,
-                  px: f.px,
-                  py: f.py,
-                  r: f.r,
-                  reasons: {
-                    selected: sel,
-                    byGroup: buildByGroupFromSelected(sel),
-                    otherText,
-                  },
-                }
-              })
-            : []
-          goldMap[r.image_id] = {
-            no_flaw: !!r.no_flaw,
-            overall: { selected: overallSelected, byGroup: buildByGroupFromSelected(overallSelected) },
-            flaws,
-          }
-        }
-        setGoldAnswers(goldMap)
-
         // 3) 起始索引：第一个未完成的 id
         let start = 0
-        for (let i = 0; i < ids.length; i++) {
-          const id = ids[i]
-          const ans = a[id]
-          if (!ans?.saved) { start = i; break }
-        }
+        for(let i=0;i<ids.length;i++){ const id=ids[i]; const ans=a[id]; if(!ans?.saved) { start=i; break } }
         setIdx(start)
         setStartedAt(Date.now())
         setLoading(false)
-      } catch (e) {
-        setError(e?.message || String(e))
-        setLoading(false)
-      }
+      }catch(e){ setError(e?.message||String(e)); setLoading(false) }
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [participantId])
+  },[participantId, navigate])
 
   // 度量
   useEffect(()=>{
@@ -395,7 +347,6 @@ export default function Practice(){
     setDraftFlaw(null); setOverallTemp({selected:[],byGroup:{}})
     setStartedAt(Date.now()); setScale(1); setOffset({x:0,y:0})
     setSelectedFlawId(null);
-    setViewMode('answer')
   },[idx])
 
   // 切题或刷新后，根据已保存记录同步 noFlaw 的勾选状态
@@ -412,7 +363,6 @@ export default function Practice(){
 
   // 鼠标按下：开启拖拽模式 & 记录起点
   const onMouseDown = (e) => {
-    if (viewMode !== 'answer') return;
     if (e.button !== 0) return;
     const isImage =
       e.target === imgRef.current || !!e.target.closest('[data-image-overlay]');
@@ -435,7 +385,6 @@ export default function Practice(){
 
   // 鼠标抬起：如果在 panning 且没有实际移动 => 视为“单击”，创建草稿点
   const onMouseUp = (e) => {
-    if (viewMode !== 'answer') return;
     if (!panning) return;
 
     if (!movedRef.current && imgRef.current && contRect && imgRect) {
@@ -519,7 +468,8 @@ export default function Practice(){
       const payload = {
         participant_id: participantId,
         image_id: Number(current.id),
-        is_practice: true,
+        is_practice: false,
+        is_pilot: true,
         is_skip: false,
         no_flaw: !!noFlaw,
         reasons_overall: cur.overall?.selected || [],
@@ -548,7 +498,7 @@ export default function Practice(){
           .from('responses').select('id')
           .eq('participant_id', participantId)
           .eq('image_id', Number(current.id))
-          .eq('is_practice', true)
+          .eq('is_practice', false)
           .limit(1);
         const exist = (existRows && existRows[0]) || null;
         if(findErr && findErr.code!=='PGRST116') throw findErr
@@ -560,42 +510,14 @@ export default function Practice(){
           if(insErr) throw insErr
         }
       }
-      // 本地状态：标记当前题已保存，并进入标准答案视图（不立刻跳到下一题）
-      setAnswers(prev => ({
-        ...prev,
-        [current.id]: {
-          ...(prev[current.id] || {}),
-          saved: true,
-          skipped: false,
-          no_flaw: !!noFlaw,
-        },
-      }))
-      setViewMode('standard')
+      // 本地状态 → 找下一题
+      setAnswers(prev=>{ const updated={...prev, [current.id]:{ ...(prev[current.id]||{}), saved:true, skipped:false, no_flaw: !!noFlaw }}; const next=findNext(idx, itemIds, updated); if(next!=null) setIdx(next); return updated })
     }catch(e){ console.error('[save error]',e); alert('保存失败：'+(e?.message||String(e))) }
-  }
-  // 复盘模式下“下一题”按钮：
-  // 仅当当前为最后一题（例如第 11 题）时，触发练习完成弹窗；
-  // 其他题目只顺序切换到下一题。
-  const handleNextAfterReview = () => {
-    const totalCount = itemIds.length
-    const isLast = idx === totalCount - 1
-
-    if (isLast) {
-      // 当前是最后一题的标准答案页：弹出“练习完成 → 进入正式实验”逻辑
-      setDoneOpen(true)
-    } else {
-      // 其余情况：顺序进入下一题，并回到作答模式
-      const nextIndex = idx + 1
-      if (nextIndex < totalCount) {
-        setIdx(nextIndex)
-        setViewMode('answer')
-      }
-    }
   }
   const handleSkip = async()=>{
     if(!current || !participantId) return
     try{
-      const payload = { participant_id: participantId, image_id:Number(current.id), is_practice:true, is_skip:true }
+      const payload = { participant_id: participantId, image_id:Number(current.id), is_practice:false, is_pilot:true, is_skip:true }
       let upsertErr=null
       try{ const { error } = await supabase.from('responses').upsert(payload,{ onConflict:'participant_id,image_id,is_practice' }).select('id').single(); if(error) upsertErr=error }catch(e){ upsertErr=e }
       if(upsertErr){
@@ -604,7 +526,7 @@ export default function Practice(){
           .select('id')
           .eq('participant_id', participantId)
           .eq('image_id', Number(current.id))
-          .eq('is_practice', true)
+          .eq('is_practice', false)
           .limit(1);
         const exist = (existRows && existRows[0]) || null;
         if (exist?.id) {
@@ -624,36 +546,11 @@ export default function Practice(){
     return null
   }
 
-  const handleFinishPracticeAndGoToMenu = async () => {
-    if (!participantId) {
-      navigate('/', { replace: true });
-      return;
-    }
-    try {
-      await supabase
-        .from('participants')
-        .update({
-          practice_passed: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', participantId);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[practice] failed to mark practice_passed', e);
-    }
-    setDoneOpen(false);
-    if (participantCohort === 'pilot') {
-      navigate('/pilot');
-    } else {
-      navigate('/menu');
-    }
-  };
-
   /* ---------------- 渲染 ---------------- */
   return (
     <div style={styles.page}>
       <header style={styles.header}>
-        <div>Practice</div>
+        <div>Pilot Study</div>
         <div style={{display:'flex', alignItems:'center', gap:12}}>
           <ProgressBar percent={progress} />
           <span style={{color:'#cbd5e1'}}>{completedCount}/{total} · {skippedCount} skipped</span>
@@ -668,6 +565,14 @@ export default function Practice(){
             Tips
           </button>
           <button style={styles.smallBtn} onClick={()=>setReviewOpen(true)}>Review</button>
+          <button style={styles.smallBtn} onClick={()=>navigate('/menu')}>Exit</button>
+          <button
+            style={{...styles.primaryBtn, opacity: allDone?1:.5}}
+            disabled={!allDone}
+            onClick={()=>navigate('/pilot-thanks')}
+          >
+            Finish Pilot
+          </button>
         </div>
       </header>
 
@@ -678,18 +583,17 @@ export default function Practice(){
 
           {!loading && !error && total===0 && (
             <div style={{padding:40, textAlign:'center', color:'#94a3b8'}}>
-              未找到练习图片，请联系研究者或返回菜单。
+              未找到预实验的题目。请返回菜单。
             </div>
           )}
 
           {!loading && !error && total>0 && current && (
             <>
               <div style={styles.metaRow}>
-                <div style={{ width: 80 }} />
-                <div style={{ fontWeight: 700 }}>Item {idx + 1} / {total}</div>
-                <div style={{ width: 80 }} />
+                <button style={styles.navBtn} disabled={idx===0} onClick={()=>setIdx(i=>Math.max(0,i-1))}>◀ Prev</button>
+                <div style={{fontWeight:700}}>Item {idx+1} / {total}</div>
+                <button style={styles.navBtn} disabled={idx===total-1} onClick={()=>setIdx(i=>Math.min(total-1,i+1))}>Next ▶</button>
               </div>
-
 
               {/* 左：查看器 */}
               <div style={viewer.wrap}>
@@ -731,74 +635,18 @@ export default function Practice(){
                   />
                   <div style={viewer.overlay} data-image-overlay />
 
-                  {/* 根据模式渲染圈点：支持 standard, mine, answer 三种模式 */}
-                  {(() => {
-                    if (viewMode === 'standard') {
-                      return (goldAnswers[current.id]?.flaws || []).map((f, i) => {
-                        const baseStyle = ringStyle(
-                          f,
-                          imgRect,
-                          contRect,
-                          HIGHLIGHT_RED,
-                          HIGHLIGHT_RED_FILL
-                        )
-                        const style = {
-                          ...baseStyle,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: '#ffffff',
-                        }
-                        return (
-                          <div key={f.id || i} style={style} title={`gold-flaw-${i + 1}`}>
-                            {i + 1}
-                          </div>
-                        )
-                      })
-                    }
-
-                    if (viewMode === 'mine') {
-                      return (answers[current.id]?.flaws || []).map((f, i) => {
-                        const baseStyle = ringStyle(
-                          f,
-                          imgRect,
-                          contRect,
-                          HIGHLIGHT_YELLOW,
-                          HIGHLIGHT_YELLOW_FILL_SOFT
-                        )
-                        const style = {
-                          ...baseStyle,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: '#ffffff',
-                        }
-                        return (
-                          <div key={f.id || i} style={style} title={`my-flaw-${i + 1}`}>
-                            {i + 1}
-                          </div>
-                        )
-                      })
-                    }
-
-                    // Default answer mode (no numbers)
-                    return (answers[current.id]?.flaws || []).map(f => {
-                      const isSel = selectedFlawId === f.id
-                      const style = ringStyle(
-                        f,
-                        imgRect,
-                        contRect,
-                        isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
-                        isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
-                      )
-                      return <div key={f.id} style={style} title="flaw" />
-                    })
-                  })()}
-                  {viewMode === 'answer' && draftFlaw && (
+                  {(answers[current.id]?.flaws || []).map(f => {
+                    const isSel = selectedFlawId === f.id;
+                    const style = ringStyle(
+                      f,
+                      imgRect,
+                      contRect,
+                      isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
+                      isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
+                    );
+                    return <div key={f.id} style={style} title="flaw" />;
+                  })}
+                  {draftFlaw && (
                     <div
                       style={ringStyle(
                         draftFlaw,
@@ -813,213 +661,108 @@ export default function Practice(){
                   {/* 提示仍在容器内，但与工具条无重叠 */}
                   <div style={viewer.hint}>滚轮缩放，拖拽平移；单击添加圈点 → 确认位置后选择理由</div>
                 </div>
-                {/* 工具条：左侧缩放/重置，右侧 Save & Next（仅在作答模式显示） */}
+                {/* 工具条移到容器下方左侧，横向排列，不遮挡图片 */}
                 <div style={viewer.toolbarRow}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button aria-label="Zoom in" style={viewer.fab} onClick={()=>setScale(s=>clamp(s+0.15,0.5,5))}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <circle cx="11" cy="11" r="7" stroke="#e2e8f0" strokeWidth="2"/>
-                        <line x1="21" y1="21" x2="17" y2="17" stroke="#e2e8f0" strokeWidth="2"/>
-                        <line x1="11" y1="8" x2="11" y2="14" stroke="#e2e8f0" strokeWidth="2"/>
-                        <line x1="8" y1="11" x2="14" y2="11" stroke="#e2e8f0" strokeWidth="2"/>
-                      </svg>
-                    </button>
-                    <button aria-label="Zoom out" style={viewer.fab} onClick={()=>setScale(s=>clamp(s-0.15,0.5,5))}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <circle cx="11" cy="11" r="7" stroke="#e2e8f0" strokeWidth="2"/>
-                        <line x1="21" y1="21" x2="17" y2="17" stroke="#e2e8f0" strokeWidth="2"/>
-                        <line x1="8" y1="11" x2="14" y2="11" stroke="#e2e8f0" strokeWidth="2"/>
-                      </svg>
-                    </button>
-                    <button
-                      aria-label="Reset view"
-                      style={viewer.fab}
-                      onClick={()=>{setScale(1); setOffset({x:0,y:0})}}
-                    >
-                      Reset
-                    </button>
-                  </div>
-                  {viewMode === 'answer' && (
-                    <button
-                      style={{ ...styles.primaryBtn, opacity: canSave ? 1 : 0.5 }}
-                      disabled={!canSave}
-                      onClick={handleSave}
-                    >
-                      Save & Next
-                    </button>
-                  )}
+                  <button aria-label="Zoom in" style={viewer.fab} onClick={()=>setScale(s=>clamp(s+0.15,0.5,5))}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="21" y1="21" x2="17" y2="17" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="11" y1="8" x2="11" y2="14" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="8" y1="11" x2="14" y2="11" stroke="#e2e8f0" strokeWidth="2"/>
+                    </svg>
+                  </button>
+                  <button aria-label="Zoom out" style={viewer.fab} onClick={()=>setScale(s=>clamp(s-0.15,0.5,5))}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="11" cy="11" r="7" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="21" y1="21" x2="17" y2="17" stroke="#e2e8f0" strokeWidth="2"/>
+                      <line x1="8" y1="11" x2="14" y2="11" stroke="#e2e8f0" strokeWidth="2"/>
+                    </svg>
+                  </button>
+                  <button aria-label="Reset view" style={viewer.fab} onClick={()=>{setScale(1); setOffset({x:0,y:0})}}>Reset</button>
                 </div>
               </div>
 
-              {/* 右：表单面板 / 标准答案面板 */}
+              {/* 右：表单面板 */}
               <div style={panel.panel}>
-                {viewMode === 'answer' && (
-                  <>
-                    {/* 顶部固定：无明显破绽 */}
-                    <div style={panel.stickyTop}>
-                      <label style={{display:'flex', alignItems:'center', gap:8}}>
-                        <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> 无明显破绽（允许 0 点 0 理由）
-                      </label>
+                {/* 顶部固定：无明显破绽 */}
+                <div style={panel.stickyTop}>
+                  <label style={{display:'flex', alignItems:'center', gap:8}}>
+                    <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> 无明显破绽（允许 0 点 0 理由）
+                  </label>
+                </div>
+
+                {/* Overall 条目（按是否已有记录切换 Add / Edit+Clear） */}
+                <div style={panel.row}>
+                  <div style={panel.head}>总体理由</div>
+                  <div style={{display:'flex', gap:8}}>
+                    {(() => {
+                      const curOverall = answers[current.id]?.overall || { selected:[], byGroup:{} }
+                      const hasOverall = (curOverall.selected?.length || 0) > 0
+                      if (!hasOverall) {
+                        return (
+                          <button
+                            style={styles.smallBtn}
+                            onClick={() => { setOverallTemp({ selected:[], byGroup:{} }); setOverallOpen(true) }}
+                          >
+                            Add
+                          </button>
+                        )
+                      }
+                      return (
+                        <>
+                          <button
+                            style={styles.smallBtn}
+                            onClick={() => { setOverallTemp(deepClone(curOverall)); setOverallOpen(true) }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            style={styles.smallBtn}
+                            onClick={() => setAnswers(prev => ({
+                              ...prev,
+                              [current.id]: { ...(prev[current.id] || {}), overall: { selected:[], byGroup:{} } }
+                            }))}
+                          >
+                            Clear
+                          </button>
+                        </>
+                      )
+                    })()}
+                  </div>
+                </div>
+                <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} 项</div>
+
+                {/* Flaws 列表 */}
+                {(answers[current.id]?.flaws||[]).map((f,i)=> (
+                  <div key={f.id} style={panel.item}>
+                    <div style={{fontWeight:700}}>Flaw #{i+1}</div>
+                    <div style={{display:'flex', gap:8}}>
+                      <button style={styles.smallBtn} onClick={()=> setSelectedFlawId(f.id)}>{selectedFlawId===f.id? 'Selected' : 'Select'}</button>
+                      <button style={styles.smallBtn} onClick={()=>{ setFlawTemp(deepClone(f.reasons||{selected:[],byGroup:{}})); setDraftFlaw({px:f.px,py:f.py,r:f.r, fromId:f.id}); setFlawModalOpen(true) }}>Edit</button>
+                      <button style={styles.smallBtn} onClick={()=> setAnswers(prev=>{ const cur=prev[current.id]||{}; const nextFlaws=(cur.flaws||[]).filter(x=>x.id!==f.id); if(selectedFlawId===f.id) setSelectedFlawId(null); return { ...prev, [current.id]: { ...cur, flaws: nextFlaws } } }) }>Delete</button>
                     </div>
+                  </div>
+                ))}
 
-                    {/* Overall 条目（按是否已有记录切换 Add / Edit+Clear） */}
-                    <div style={panel.row}>
-                      <div style={panel.head}>总体理由</div>
-                      <div style={{display:'flex', gap:8}}>
-                        {(() => {
-                          const curOverall = answers[current.id]?.overall || { selected:[], byGroup:{} }
-                          const hasOverall = (curOverall.selected?.length || 0) > 0
-                          if (!hasOverall) {
-                            return (
-                              <button
-                                style={styles.smallBtn}
-                                onClick={() => { setOverallTemp({ selected:[], byGroup:{} }); setOverallOpen(true) }}
-                              >
-                                Add
-                              </button>
-                            )
-                          }
-                          return (
-                            <>
-                              <button
-                                style={styles.smallBtn}
-                                onClick={() => { setOverallTemp(deepClone(curOverall)); setOverallOpen(true) }}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                style={styles.smallBtn}
-                                onClick={() => setAnswers(prev => ({
-                                  ...prev,
-                                  [current.id]: { ...(prev[current.id] || {}), overall: { selected:[], byGroup:{} } }
-                                }))}
-                              >
-                                Clear
-                              </button>
-                            </>
-                          )
-                        })()}
-                      </div>
+                {/* Draft 提示 */}
+                {draftFlaw && (
+                  <div style={{...panel.item, borderStyle:'dashed'}}>
+                    <div>点击位置待确认</div>
+                    <div style={{display:'flex', gap:8}}>
+                      <button style={styles.smallBtn} onClick={confirmDraftPosition}>Confirm</button>
+                      <button style={styles.smallBtn} onClick={()=>{ setDraftFlaw(null) }}>Cancel</button>
                     </div>
-                    <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} 项</div>
-
-                    {/* Flaws 列表 */}
-                    {(answers[current.id]?.flaws||[]).map((f,i)=> (
-                      <div key={f.id} style={panel.item}>
-                        <div style={{fontWeight:700}}>Flaw #{i+1}</div>
-                        <div style={{display:'flex', gap:8}}>
-                          <button style={styles.smallBtn} onClick={()=> setSelectedFlawId(f.id)}>{selectedFlawId===f.id? 'Selected' : 'Select'}</button>
-                          <button style={styles.smallBtn} onClick={()=>{ setFlawTemp(deepClone(f.reasons||{selected:[],byGroup:{}})); setDraftFlaw({px:f.px,py:f.py,r:f.r, fromId:f.id}); setFlawModalOpen(true) }}>Edit</button>
-                          <button style={styles.smallBtn} onClick={()=> setAnswers(prev=>{ const cur=prev[current.id]||{}; const nextFlaws=(cur.flaws||[]).filter(x=>x.id!==f.id); if(selectedFlawId===f.id) setSelectedFlawId(null); return { ...prev, [current.id]: { ...cur, flaws: nextFlaws } } }) }>Delete</button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Draft 提示 */}
-                    {draftFlaw && (
-                      <div style={{...panel.item, borderStyle:'dashed'}}>
-                        <div>点击位置待确认</div>
-                        <div style={{display:'flex', gap:8}}>
-                          <button style={styles.smallBtn} onClick={confirmDraftPosition}>Confirm</button>
-                          <button style={styles.smallBtn} onClick={()=>{ setDraftFlaw(null) }}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div style={{flex:1}} />
-                  </>
+                  </div>
                 )}
 
-                {viewMode === 'standard' && (
-                  <>
-                    <div style={panel.stickyTop}>
-                      <div style={{ ...panel.head, fontWeight: 700 }}>标准答案（练习参考）</div>
-                      {!goldAnswers[current.id] && (
-                        <div style={panel.note}>本题尚未配置标准答案。</div>
-                      )}
-                    </div>
-                    {goldAnswers[current.id] && (
-                      <div style={{marginTop:8, fontSize:14}}>
-                        <div style={{fontWeight:700, marginBottom:4}}>总体理由：</div>
-                        <ul style={{marginTop:0, paddingLeft:18}}>
-                          {(goldAnswers[current.id].overall?.selected || []).map(code => (
-                            <li key={code}>{labelForOverall(code) || code}</li>
-                          ))}
-                          {goldAnswers[current.id].overall?.selected?.length === 0 && (
-                            <li>（无总体理由）</li>
-                          )}
-                        </ul>
+                {/* 新增：底部按钮前的 spacer */}
+                <div style={{flex:1}} />
 
-                        <div style={{fontWeight:700, margin:'10px 0 4px'}}>细节破绽：</div>
-                        {(goldAnswers[current.id].flaws || []).length === 0 && (
-                          <div style={panel.note}>（无细节破绽）</div>
-                        )}
-                        {(goldAnswers[current.id].flaws || []).map((f,i) => (
-                          <div key={f.id || i} style={{marginBottom:6, padding:'6px 8px', borderRadius:6, border:'1px solid #334155'}}>
-                            <div style={{fontWeight:600, marginBottom:2}}>区域 #{i+1}</div>
-                            <ul style={{margin:0, paddingLeft:18}}>
-                              {(f.reasons?.selected || []).map(code => (
-                                <li key={code}>{labelForFlaw(code) || code}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div style={{flex:1}} />
-
-                    <div style={panel.stickyBottom}>
-                      <button style={styles.secondaryBtn} onClick={() => setViewMode('mine')}>
-                        查看我的标注
-                      </button>
-                      <button style={styles.primaryBtn} onClick={handleNextAfterReview}>
-                        下一题
-                      </button>
-                    </div>
-                  </>
-                )}
-
-                {viewMode === 'mine' && (
-                  <>
-                    <div style={panel.stickyTop}>
-                      <div style={panel.head}>我的标注（仅查看，不再编辑）</div>
-                    </div>
-                    <div style={{marginTop:8, fontSize:14}}>
-                      <div style={{fontWeight:700, marginBottom:4}}>总体理由：</div>
-                      <ul style={{marginTop:0, paddingLeft:18}}>
-                        {(answers[current.id]?.overall?.selected || []).map(code => (
-                          <li key={code}>{labelForOverall(code) || code}</li>
-                        ))}
-                        {!(answers[current.id]?.overall?.selected || []).length && (
-                          <li>（未选择总体理由）</li>
-                        )}
-                      </ul>
-                      <div style={{fontWeight:700, margin:'10px 0 4px'}}>细节破绽：</div>
-                      {(answers[current.id]?.flaws || []).length === 0 && (
-                        <div style={panel.note}>（未圈选细节破绽）</div>
-                      )}
-                      {(answers[current.id]?.flaws || []).map((f,i) => (
-                        <div key={f.id || i} style={{marginBottom:6, padding:'6px 8px', borderRadius:6, border:'1px solid #334155'}}>
-                          <div style={{fontWeight:600, marginBottom:2}}>Flaw #{i+1}</div>
-                          <ul style={{margin:0, paddingLeft:18}}>
-                            {(f.reasons?.selected || []).map(code => (
-                              <li key={code}>{labelForFlaw(code) || code}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div style={{flex:1}} />
-
-                    <div style={panel.stickyBottom}>
-                      <button style={styles.primaryBtn} onClick={() => setViewMode('standard')}>
-                        返回标准答案
-                      </button>
-                    </div>
-                  </>
-                )}
+                {/* 底部固定：操作按钮 */}
+                <div style={panel.stickyBottom}>
+                  <button style={styles.secondaryBtn} onClick={handleSkip}>Skip</button>
+                  <button style={{...styles.primaryBtn, opacity:canSave?1:.5}} disabled={!canSave} onClick={handleSave}>Save & Next</button>
+                </div>
               </div>
             </>
           )}
@@ -1044,29 +787,6 @@ export default function Practice(){
           onJump={(i)=>{ setIdx(i); setReviewOpen(false) }}
           onClose={()=>setReviewOpen(false)}
         />
-      )}
-
-      {doneOpen && (
-        <div style={modal.backdrop} onClick={() => setDoneOpen(false)}>
-          <div style={modal.box} onClick={e => e.stopPropagation()}>
-            <div style={modal.title}>练习已完成</div>
-            <div style={{ marginBottom: 16, color: '#cbd5e1', lineHeight: 1.6 }}>
-              您已经完成了所有的练习题。接下来将进入正式实验。<br />
-              在开始正式实验前，请确保您的环境和状态已准备就绪。
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <button style={styles.smallBtn} onClick={() => setDoneOpen(false)}>
-                留在当前页面
-              </button>
-              <button
-                style={styles.primaryBtn}
-                onClick={handleFinishPracticeAndGoToMenu}
-              >
-                前往正式实验
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   )
@@ -1301,10 +1021,7 @@ const styles={
   navBtn:{ padding:'6px 10px', borderRadius:8, border:'1px solid #334155', background:'#111827', color:'#e2e8f0', cursor:'pointer' },
   secondaryBtn:{ padding:'10px 16px', borderRadius:8, border:'1px solid #64748b', background:'#0b1220', color:'#e2e8f0', cursor:'pointer' },
   primaryBtn:{ padding:'10px 16px', borderRadius:8, border:'none', background:'#2563eb', color:'#fff', fontWeight:800, cursor:'pointer' },
-  smallBtn:{ padding:'6px 10px', borderRadius:6, border:'1px solid #475569', background:'#111827', color:'#e2e8f0', cursor:'pointer' },
-  tabRow:{ display:'flex', gap:8, margin:'4px 0 8px' },
-  tabBtn:{ padding:'4px 10px', borderRadius:999, border:'1px solid #475569', background:'#020617', color:'#e2e8f0', cursor:'pointer', fontSize:13 },
-  tabBtnActive:{ padding:'4px 10px', borderRadius:999, border:'1px solid #2563eb', background:'#1d4ed8', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700 }
+  smallBtn:{ padding:'6px 10px', borderRadius:6, border:'1px solid #475569', background:'#111827', color:'#e2e8f0', cursor:'pointer' }
 }
 const viewer={
   wrap:{ display:'flex', flexDirection:'column', alignItems:'flex-start' },
@@ -1312,15 +1029,7 @@ const viewer={
   image:{ maxWidth:'100%', maxHeight:'100%', willChange:'transform', transition:'transform 60ms linear' },
   overlay:{ position:'absolute', inset:0 },
   fab:{ padding:'8px 10px', borderRadius:8, border:'1px solid #475569', background:'#0b1220cc', color:'#e2e8f0', cursor:'pointer', fontWeight:800, minWidth:56 },
-  toolbarRow:{
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginTop: 8,
-    paddingRight: 4,
-  },
+  toolbarRow:{ display:'flex', gap:8, marginTop:8 },
   hint:{ position:'absolute', left:12, bottom:12, color:'#cbd5e1', background:'#0b1220cc', padding:'6px 8px', borderRadius:6, fontSize:12 }
 }
 const panel={
@@ -1329,23 +1038,8 @@ const panel={
   head:{ fontWeight:800, color:'#cbd5e1' },
   note:{ fontSize:12, color:'#9ca3af', marginTop:4 },
   item:{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#0f172a', border:'1px solid #334155', borderRadius:8, padding:'8px 10px', marginTop:6 },
-  stickyTop:{
-    position: 'static',
-    paddingBottom: 8,
-    marginBottom: 8,
-    background: 'transparent',
-    borderBottom: '1px solid #22304a',
-  },
-  stickyBottom:{
-    position: 'static',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 12,
-    padding: '14px 0 0',
-    marginTop: 12,
-    background: 'transparent',
-    borderTop: '1px solid #22304a',
-  }
+  stickyTop:{ position:'sticky', top:0, background:'#0b1220', paddingBottom:8, marginBottom:8, zIndex:1, borderBottom:'1px solid #22304a' },
+  stickyBottom:{ position:'sticky', bottom:0, display:'flex', justifyContent:'space-between', gap:12, paddingTop:10, marginTop:12, background:'#0b1220', zIndex:1, borderTop:'1px solid #22304a' }
 }
 const modal={
   backdrop:{ position:'fixed', inset:0, background:'rgba(0,0,0,.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:50 },
@@ -1417,26 +1111,4 @@ function ReviewModal({ itemIds, answers, currentIndex, onJump, onClose }) {
       </div>
     </div>
   )
-}
-// reason code 显示标签（标准答案/我的标注视图用）
-function labelForOverall(code){
-  if(!code) return ''
-  const [gKey, itemKey] = String(code).split(':')
-  for(const g of OVERALL_GROUPS){
-    if(g.key !== gKey) continue
-    const it = (g.items || []).find(x => x.key === itemKey)
-    if(it) return it.label
-  }
-  return code
-}
-
-function labelForFlaw(code){
-  if(!code) return ''
-  const [gKey, itemKey] = String(code).split(':')
-  for(const g of FLAW_GROUPS){
-    if(g.key !== gKey) continue
-    const it = (g.items || []).find(x => x.key === itemKey)
-    if(it) return it.label
-  }
-  return code
 }
