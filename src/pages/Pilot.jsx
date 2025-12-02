@@ -165,6 +165,24 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
 const deepClone = (o) => JSON.parse(JSON.stringify(o||{}))
 const uid = () => Math.random().toString(36).slice(2,10)
 
+// Deterministic string-to-seed and PRNG helpers for global fixed shuffle
+const hashStringToSeed = (str) => {
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) | 0
+  }
+  return h >>> 0
+}
+
+const mulberry32 = (a) => {
+  return function () {
+    let t = (a += 0x6D2B79F5)
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 /* ===================================================== */
 export default function Pilot(){
   const navigate = useNavigate()
@@ -242,10 +260,25 @@ export default function Pilot(){
           return
         }
 
-        const ids = imgs.map(r => Number(r.id))
+        // 使用固定种子的伪随机算法，对预实验图片做一次“乱且固定”的全局排序：
+        // 1）先按 id 排序，保证基础顺序稳定
+        const ordered = [...imgs].sort((a, b) => Number(a.id) - Number(b.id))
+
+        // 2）用固定种子做 Fisher–Yates 洗牌（所有参与者 & 所有会话顺序一致）
+        const seed = hashStringToSeed('pilot-global-seed-2025-12-02')
+        const rng = mulberry32(seed)
+        const shuffled = [...ordered]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(rng() * (i + 1))
+          const tmp = shuffled[i]
+          shuffled[i] = shuffled[j]
+          shuffled[j] = tmp
+        }
+
+        const ids = shuffled.map(r => Number(r.id))
         setItemIds(ids)
 
-        const arr = imgs.map(r => {
+        const arr = shuffled.map(r => {
           const id = Number(r.id)
           const rawPath = r.storage_path || ''
           const relPath = String(rawPath).replace(/^images\//, '')
@@ -305,9 +338,16 @@ export default function Pilot(){
         }
         setAnswers(a)
 
-        // 3) 起始索引：第一个未完成的 id
+        // 3) 起始索引：第一个未完成的 id（使用本次计算好的 ids）
         let start = 0
-        for(let i=0;i<ids.length;i++){ const id=ids[i]; const ans=a[id]; if(!ans?.saved) { start=i; break } }
+        for (let i = 0; i < ids.length; i++) {
+          const id = ids[i]
+          const ans = a[id]
+          if (!ans?.saved) {
+            start = i
+            break
+          }
+        }
         setIdx(start)
         setStartedAt(Date.now())
         setLoading(false)
@@ -358,8 +398,41 @@ export default function Pilot(){
   }, [idx, images, answers])
 
   /* ---------------- 交互：缩放拖拽/圈点 ---------------- */
-  const zoom = (delta, e) => { setScale(s => clamp(s + delta, 0.5, 5)) }
-  const onWheel = (e) => { e.preventDefault(); zoom(e.deltaY > 0 ? -0.15 : 0.15, e) }
+  const zoom = (delta, e) => {
+    e.preventDefault();
+    if (!containerRef.current) {
+      setScale(s => clamp(s + delta, 0.5, 5));
+      return;
+    }
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+
+    setScale(prevScale => {
+      const oldScale = prevScale;
+      const newScale = clamp(oldScale + delta, 0.5, 5);
+      if (newScale === oldScale) return oldScale;
+
+      // 调整偏移量，使得鼠标下的点在缩放前后尽量保持在同一位置
+      setOffset(prevOffset => {
+        const factor = 1 / newScale - 1 / oldScale;
+        return {
+          x: prevOffset.x + dx * factor,
+          y: prevOffset.y + dy * factor,
+        };
+      });
+
+      return newScale;
+    });
+  };
+
+  const onWheel = (e) => {
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    zoom(delta, e);
+  };
 
   // 鼠标按下：开启拖拽模式 & 记录起点
   const onMouseDown = (e) => {

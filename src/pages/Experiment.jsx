@@ -383,8 +383,42 @@ export default function Experiment(){
   }, [idx, images, answers])
 
   /* ---------------- 交互：缩放拖拽/圈点 ---------------- */
-  const zoom = (delta, e) => { setScale(s => clamp(s + delta, 0.5, 5)) }
-  const onWheel = (e) => { e.preventDefault(); zoom(e.deltaY > 0 ? -0.15 : 0.15, e) }
+  // Cursor-anchored zoom
+  const zoom = (delta, e) => {
+    e.preventDefault();
+    if (!containerRef.current) {
+      setScale(s => clamp(s + delta, 0.5, 5));
+      return;
+    }
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+
+    setScale(prevScale => {
+      const oldScale = prevScale;
+      const newScale = clamp(oldScale + delta, 0.5, 5);
+      if (newScale === oldScale) return oldScale;
+
+      // Adjust offset so that the point under the cursor stays under the cursor
+      setOffset(prevOffset => {
+        const factor = 1 / newScale - 1 / oldScale;
+        return {
+          x: prevOffset.x + dx * factor,
+          y: prevOffset.y + dy * factor,
+        };
+      });
+
+      return newScale;
+    });
+  };
+
+  const onWheel = (e) => {
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    zoom(delta, e);
+  };
 
   // 鼠标按下：开启拖拽模式 & 记录起点
   const onMouseDown = (e) => {

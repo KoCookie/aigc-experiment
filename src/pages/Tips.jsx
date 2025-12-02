@@ -41,205 +41,64 @@ export default function Tips() {
 
       <main style={styles.centerWrap}>
         <section style={styles.card}>
-          {/* What you do on each image */}
-          <h1 style={styles.h1}>What you do on each image</h1>
-          <p style={styles.p}>
-            In this experiment, you will see different types of images (including people,
-            hands, objects, and scenes). Your task is to carefully observe each image
-            and mark any areas that look unnatural, inconsistent, or suspicious.
-          </p>
-          <ol style={styles.ol}>
-            <li>
-              Look closely at the entire image.
-            </li>
-            <li>
-              Whenever you notice something that feels <strong>unnatural</strong> or
-              "not quite right", <strong>click</strong> directly on that area to mark it.
-            </li>
-            <li>
-              For each marked point, you will <strong>confirm</strong> the position and
-              then <strong>choose reasons</strong> that best describe the issue.
-            </li>
-            <li>
-              If you think the <strong>whole image</strong> has a general problem, you can
-              add <strong>overall reasons</strong>.
-            </li>
-            <li>
-              If you believe there are <strong>no obvious flaws</strong>, you may check
-              <em>"No obvious flaws"</em>.
-            </li>
-          </ol>
+          <h1 style={styles.h1}>提示与帮助（Tips）</h1>
 
-          <p style={styles.note}>
-            <strong>Note:</strong> There are no right or wrong answers. We are interested in
-            <strong>how you perceive problems in the image</strong>.
+          <h2 style={styles.h2}>实验整体流程概览</h2>
+          <p style={styles.p}>
+            在阅读完说明后，您会进入 Practice 阶段，我们将提供 11 道练习题帮助您熟悉实验流程。
+            Practice 只需完成一次，之后再次登录将直接进入 Menu 页面。
+          </p>
+          <p style={styles.p}>
+            在 Menu 页面您可以看到 4 个批次的进度（Batch1–Batch4），可以自由选择继续未完成的批次。
+            每次回到未完成的批次时，系统会从最新的进度继续。
+          </p>
+          <p style={styles.p}>
+            进入批次后，您将正式开始实验。在完成或退出某个批次后，您将进入 Result 页面查看整体进度。
           </p>
 
-          {/* How to mark a flaw */}
-          <h2 style={styles.h2}>How to mark a flaw</h2>
-          <h3 style={styles.h3}>1. Click on the image to add a point</h3>
+          <h2 style={styles.h2}>有关于理由选项的说明</h2>
+          <p style={styles.p}>面部问题：不仅限于人，也可能是动物、乐高积木人等具有“脸部”的对象。</p>
+          <p style={styles.p}>毛发问题：可以指人的头发、动物毛发、衣物纤维（如毛衣、围巾）。</p>
+          <p style={styles.p}>手部问题：仅指人的手；动物的手足属于身体问题；类似“手”的玩具形状（如积木人）属于物体问题。</p>
+          <p style={styles.p}>身体问题：人、动物、积木人的身体/躯干/肢干结构问题。</p>
+          <p style={styles.p}>物体问题：范围较广，包括食物、积木、绘画、生活用品等。</p>
+          <p style={styles.p}>其他问题：最通用的选项，可覆盖所有无法归类的问题，也可用文字补充。</p>
+
+          <h2 style={styles.h2}>在反馈理由时您可能遇到的情况</h2>
+          <p style={styles.p}>1. 图片整体存在不自然之处（如色调奇怪、CG 感强），但细节无明显错误 → 可只选整体理由。</p>
+          <p style={styles.p}>2. 图片整体良好，但局部存在破绽（人体结构、物体位置等） → 可只选细节理由。</p>
+          <p style={styles.p}>3. 整体与细节都存在破绽 → 需同时反馈整体与细节理由。</p>
           <p style={styles.p}>
-            Click on the location where you notice a potential flaw. A highlighted circle
-            will appear (bright yellow, like a highlighter). This is a <strong>candidate point</strong>.
+            4. 图片质量极差（如整体油画感、人脸大量结构异常、手部融合成团等） → 无需反馈细节，可只选整体理由。
+          </p>
+          <p style={styles.p}>
+            请尽量通过点击反馈尽可能详细的破绽；当破绽太多无法逐一点击时，可“放弃”该图，仅反馈整体理由。
+          </p>
+          <p style={styles.p}><strong>请相信自己的判断，没有标准答案，我们需要的就是您的主观感受。</strong></p>
+
+          <h2 style={styles.h2}>Practice 阶段目标</h2>
+          <p style={styles.p}>1. 熟悉实验流程与页面操作。</p>
+          <p style={styles.p}>2. 熟悉各项理由选项的含义与适用情况。</p>
+          <p style={styles.p}>3. 体会哪些图片可以“放弃”。</p>
+          <p style={styles.p}>
+            Practice 的参考答案并不是“标准答案”，它只是帮助您理解正式实验中反馈的颗粒度。您的判断永远是正确的。
           </p>
 
-          <h3 style={styles.h3}>2. Confirm and choose reasons</h3>
+          <h2 style={styles.h2}>关于点击图片的特别说明</h2>
           <p style={styles.p}>
-            After clicking <em>Confirm</em>, a window will appear where you can select one
-            or more <strong>reasons</strong> that best match what you see at that point.
-            Each point is saved as a separate entry.
+            点击代表您的注视。若一次点击无法覆盖整个破绽（如整根手指、马匹整个下半身），无需多次点击，确保一次点击落在该区域即可。
+          </p>
+          <p style={styles.p}>
+            若一个圆圈覆盖多个破绽（例如两只眼睛同时被圈住），请分别点击每一处破绽，因为只有圆圈中心的位置才是有效反馈。
+          </p>
+          <p style={styles.p}>
+            当您放大或缩小图片后，圆圈的位置可能出现“飘移”，请使用 Reset 按钮恢复准确位置。
           </p>
 
-          <h3 style={styles.h3}>3. Add multiple points</h3>
+          <h2 style={styles.h2}>提醒</h2>
           <p style={styles.p}>
-            If you notice several suspicious areas in the same image, you can repeat the
-            process: click, confirm, and choose reasons for each point. There is no fixed
-            limit on how many points you can mark.
-          </p>
-
-          <h3 style={styles.h3}>4. Edit or delete a point</h3>
-          <p style={styles.p}>
-            In the panel on the right side of the experiment page:
-          </p>
-          <ul style={styles.ul}>
-            <li>
-              <strong>Edit</strong> &mdash; change the reasons for that point.
-            </li>
-            <li>
-              <strong>Delete</strong> &mdash; remove the point completely.
-            </li>
-            <li>
-              <strong>Select</strong> &mdash; highlight the corresponding circle in red so
-              you can clearly see which point you are editing.
-            </li>
-          </ul>
-
-          {/* Overall reasons */}
-          <h2 style={styles.h2}>Overall reasons (optional)</h2>
-          <p style={styles.p}>
-            Sometimes the whole image feels strange or inconsistent, but it is hard to
-            describe the problem using only small local points. In such cases, you can add
-            <strong>overall reasons</strong>:
-          </p>
-          <ul style={styles.ul}>
-            <li>
-              Click <strong>Add</strong> under the "Overall reasons" section.
-            </li>
-            <li>
-              Choose one or more descriptions that match the overall issue you feel.
-            </li>
-            <li>
-              Overall reasons can be used together with multiple local points, or on their own.
-            </li>
-          </ul>
-
-          {/* No obvious flaws */}
-          <h2 style={styles.h2}>"No obvious flaws"</h2>
-          <p style={styles.p}>
-            If, after careful inspection, you feel the image does not contain any clear or
-            meaningful flaws, you may check <strong>"No obvious flaws"</strong>:
-          </p>
-          <ul style={styles.ul}>
-            <li>All local points and overall reasons for this image will be cleared.</li>
-            <li>Your final judgment for this image will be recorded as "no obvious flaws".</li>
-          </ul>
-          <p style={styles.p}>
-            If you change your mind later, you can uncheck it and continue to add marks and reasons.
-          </p>
-
-          {/* Saving, skipping, navigation */}
-          <h2 style={styles.h2}>Saving, skipping, and navigation</h2>
-
-          <h3 style={styles.h3}>1. Save &amp; Next</h3>
-          <p style={styles.p}>
-            Your responses are saved only when you click <strong>Save &amp; Next</strong>:
-          </p>
-          <ul style={styles.ul}>
-            <li>The system saves all marks, reasons, overall reasons, or "no obvious flaws".</li>
-            <li>Then it automatically moves to the next image.</li>
-          </ul>
-
-          <h3 style={styles.h3}>2. Skip</h3>
-          <p style={styles.p}>
-            If you are unsure how to judge an image, or want to come back later, you can
-            click <strong>Skip</strong>:
-          </p>
-          <ul style={styles.ul}>
-            <li>The image will be marked as unfinished.</li>
-            <li>You can return to it at any time using the Review grid.</li>
-          </ul>
-
-          <h3 style={styles.h3}>3. Review grid</h3>
-          <p style={styles.p}>
-            Click the <strong>Review</strong> button at the top of the experiment page to
-            open the grid:
-          </p>
-          <ul style={styles.ul}>
-            <li><strong>Green</strong> &mdash; completed images.</li>
-            <li><strong>Red</strong> &mdash; unfinished or skipped images.</li>
-            <li><strong>Orange</strong> &mdash; the current image.</li>
-            <li>Click any square to jump directly to that image.</li>
-          </ul>
-
-          {/* Viewing the image */}
-          <h2 style={styles.h2}>Viewing the image</h2>
-          <ul style={styles.ul}>
-            <li>Use the mouse wheel to <strong>zoom in</strong> and <strong>zoom out</strong>.</li>
-            <li>Click and drag to <strong>move</strong> the image when zoomed in.</li>
-            <li>Click <strong>Reset</strong> to restore the default view if you get lost.</li>
-            <li>
-              If the image does not load properly, try refreshing the page. If it still fails,
-              you may skip this image and continue.
-            </li>
-          </ul>
-
-          {/* Common situations & fixes */}
-          <h2 style={styles.h2}>Common situations &amp; how to fix them</h2>
-
-          <details style={styles.details} open>
-            <summary style={styles.summary}>I clicked the wrong location.</summary>
-            <div style={styles.detailBody}>
-              Use <strong>Delete</strong> to remove that point and click again at the correct location.
-            </div>
-          </details>
-
-          <details style={styles.details} open>
-            <summary style={styles.summary}>I selected the wrong reasons.</summary>
-            <div style={styles.detailBody}>
-              Use <strong>Edit</strong> to adjust or replace the reasons for that point.
-            </div>
-          </details>
-
-          <details style={styles.details} open>
-            <summary style={styles.summary}>
-              I marked several points but later feel the image is actually fine.
-            </summary>
-            <div style={styles.detailBody}>
-              Check <strong>"No obvious flaws"</strong>. The system will clear all marks and
-              overall reasons for this image.
-            </div>
-          </details>
-
-          <details style={styles.details} open>
-            <summary style={styles.summary}>I'm not sure how to judge this image.</summary>
-            <div style={styles.detailBody}>
-              Use <strong>Skip</strong> and move on. You can come back later from the Review grid.
-            </div>
-          </details>
-
-          <details style={styles.details} open>
-            <summary style={styles.summary}>The image does not load.</summary>
-            <div style={styles.detailBody}>
-              Try refreshing the page. If it still does not load, skip this image and continue
-              with the others.
-            </div>
-          </details>
-
-          <h2 style={styles.h2}>Reminder</h2>
-          <p style={styles.p}>
-            You can always return to this Tips page from the experiment header if you feel
-            unsure about what to do. Take your time, and focus on marking what looks
-            unnatural or inconsistent to you.
+            如果在实验过程中忘记任何内容，都可以随时点击右上角的 Tips 查看本说明。
+            请根据您的真实主观感受进行反馈即可。
           </p>
         </section>
       </main>

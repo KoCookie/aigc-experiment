@@ -407,8 +407,41 @@ export default function Practice(){
   }, [idx, images, answers])
 
   /* ---------------- 交互：缩放拖拽/圈点 ---------------- */
-  const zoom = (delta, e) => { setScale(s => clamp(s + delta, 0.5, 5)) }
-  const onWheel = (e) => { e.preventDefault(); zoom(e.deltaY > 0 ? -0.15 : 0.15, e) }
+  const zoom = (delta, e) => {
+    e.preventDefault();
+    if (!containerRef.current) {
+      setScale(s => clamp(s + delta, 0.5, 5));
+      return;
+    }
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+
+    setScale(prevScale => {
+      const oldScale = prevScale;
+      const newScale = clamp(oldScale + delta, 0.5, 5);
+      if (newScale === oldScale) return oldScale;
+
+      // 调整偏移量，使得鼠标下的点在缩放前后尽量保持在同一位置
+      setOffset(prevOffset => {
+        const factor = 1 / newScale - 1 / oldScale;
+        return {
+          x: prevOffset.x + dx * factor,
+          y: prevOffset.y + dy * factor,
+        };
+      });
+
+      return newScale;
+    });
+  };
+
+  const onWheel = (e) => {
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    zoom(delta, e);
+  };
 
   // 鼠标按下：开启拖拽模式 & 记录起点
   const onMouseDown = (e) => {
@@ -933,9 +966,9 @@ export default function Practice(){
                 {viewMode === 'standard' && (
                   <>
                     <div style={panel.stickyTop}>
-                      <div style={{ ...panel.head, fontWeight: 700 }}>标准答案（练习参考）</div>
+                      <div style={{ ...panel.head, fontWeight: 700 }}>参考答案（练习参考）</div>
                       {!goldAnswers[current.id] && (
-                        <div style={panel.note}>本题尚未配置标准答案。</div>
+                        <div style={panel.note}>本题尚未配置参考答案。</div>
                       )}
                     </div>
                     {goldAnswers[current.id] && (
@@ -1015,7 +1048,7 @@ export default function Practice(){
 
                     <div style={panel.stickyBottom}>
                       <button style={styles.primaryBtn} onClick={() => setViewMode('standard')}>
-                        返回标准答案
+                        返回参考答案
                       </button>
                     </div>
                   </>

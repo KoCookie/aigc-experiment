@@ -2,6 +2,24 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import supabase from '../supabaseClient'
 
+// 用于生成“乱且固定”的全局随机顺序（所有参与者一致）
+const hashStringToSeed = (str) => {
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = (h * 31 + str.charCodeAt(i)) | 0
+  }
+  return h >>> 0
+}
+
+const mulberry32 = (a) => {
+  return function () {
+    let t = (a += 0x6D2B79F5)
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
 const cardStyle = {
   border: '1px solid #22304a',
   borderRadius: 12,
@@ -97,19 +115,81 @@ export default function Menu() {
           console.warn('[Menu] v_user_batch_progress not available, falling back:', e?.message || e);
         }
 
-        // 1) Ensure user has batch assignments (idempotent)
-        const { error: rpcErr } = await supabase.rpc('init_user_batches', { _user_id: userId });
-        if (rpcErr) {
-          console.warn('[Menu] init_user_batches error:', rpcErr);
-        }
-
         // 2) Pull batch assignments (authoritative "ground truth" of which items belong to each batch)
-        const { data: assigns, error: aErr } = await supabase
+        let { data: assigns, error: aErr } = await supabase
           .from('user_batch_assignments')
           .select('batch_no, item_ids')
           .eq('user_id', userId)
           .order('batch_no', { ascending: true });
         if (aErr) throw aErr;
+
+        // If this user has no batch assignments yet, create a “乱且固定”的 4-batch 分配
+        if (!assigns || !assigns.length) {
+          // 1）取出所有正式实验图片（不包含 practice / pilot）
+          const { data: imgRows, error: imgErr } = await supabase
+            .from('images')
+            .select('id')
+            .eq('is_practice', false)
+            .eq('is_pilot', false);
+
+          if (imgErr) throw imgErr;
+          if (!imgRows || imgRows.length === 0) {
+            throw new Error('No experiment images found for batch assignment');
+          }
+
+          // 2）按 id 排序，保证基础顺序稳定
+          const baseIds = imgRows
+            .map(r => Number(r.id))
+            .sort((a, b) => a - b);
+
+          // 3）使用固定种子的伪随机数，对所有 image_id 做一次“乱且固定”的全局洗牌
+          //    —— 所有参与者使用相同的种子，因此顺序完全一致
+          const seed = hashStringToSeed('experiment-global-seed-2025-12-02-v3');
+          const rng = mulberry32(seed);
+          const shuffled = [...baseIds];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            const tmp = shuffled[i];
+            shuffled[i] = shuffled[j];
+            shuffled[j] = tmp;
+          }
+
+          // 4）将洗牌后的列表平均切成 4 个 batch（顺序固定）
+          const BATCH_COUNT = 4;
+          const perBatch = Math.ceil(shuffled.length / BATCH_COUNT);
+          const payloads = [];
+
+          for (let b = 1; b <= BATCH_COUNT; b++) {
+            const start = (b - 1) * perBatch;
+            const end = b * perBatch;
+            const slice = shuffled.slice(start, end);
+            if (!slice.length) continue;
+            payloads.push({
+              user_id: userId,
+              batch_no: b,
+              item_ids: slice,
+            });
+          }
+
+          if (payloads.length) {
+            const { error: insErr } = await supabase
+              .from('user_batch_assignments')
+              .insert(payloads);
+
+            // In dev/StrictMode, the effect may run twice and race,
+            // causing a harmless "duplicate key" error. We silently
+            // ignore that specific case but surface other errors.
+            if (insErr) {
+              const msg = String(insErr.message || '');
+              if (!msg.includes('duplicate key value violates unique constraint')) {
+                throw insErr;
+              }
+            }
+          }
+
+          // 更新 assigns，后续逻辑统一使用
+          assigns = payloads;
+        }
 
         const batches = (assigns || []).map(r => ({
           batch_no: Number(r.batch_no),
