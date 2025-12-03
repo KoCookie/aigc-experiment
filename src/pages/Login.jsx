@@ -26,7 +26,7 @@ export default function Login() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [cohort, setCohort] = useState('test')   // 批次名，可自定义
+  const [cohort, setCohort] = useState('pilot')   // 批次名，可自定义
   const [loading, setLoading] = useState(false)
   const [errMsg, setErrMsg] = useState('')
 

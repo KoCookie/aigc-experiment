@@ -1,5 +1,5 @@
 // src/pages/Experiment.jsx (rev: batch-flow, single-button, flaws-only)
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import supabase from '../supabaseClient'
 
@@ -212,6 +212,13 @@ export default function Practice(){
   // 画布
   const containerRef = useRef(null)
   const imgRef = useRef(null)
+  const updateRects = useCallback(() => {
+    if (!imgRef.current || !containerRef.current) return
+    const rectImg = imgRef.current.getBoundingClientRect()
+    const rectCont = containerRef.current.getBoundingClientRect()
+    setImgRect(rectImg)
+    setContRect(rectCont)
+  }, [])
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({x:0,y:0})
   const [panning, setPanning] = useState(false)
@@ -366,37 +373,43 @@ export default function Practice(){
 
   // 度量
   useEffect(()=>{
-    const measure=()=>{ if(!imgRef.current||!containerRef.current) return; setImgRect(imgRef.current.getBoundingClientRect()); setContRect(containerRef.current.getBoundingClientRect()); }
-    measure();
-    let ro = null;
+    const measure = () => {
+      updateRects()
+    }
+    measure()
+    let ro = null
     if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(measure);
-      if (containerRef.current) ro.observe(containerRef.current);
+      ro = new ResizeObserver(measure)
+      if (containerRef.current) ro.observe(containerRef.current)
     }
-    window.addEventListener('resize', measure);
+    window.addEventListener('resize', measure)
     return () => {
-      if (ro) ro.disconnect();
-      window.removeEventListener('resize', measure);
+      if (ro) ro.disconnect()
+      window.removeEventListener('resize', measure)
     }
-  },[])
+  }, [updateRects])
   // 在缩放/平移/换题后，等布局稳定再重新测量，避免圈点与图像错位
   useLayoutEffect(() => {
     if (!imgRef.current || !containerRef.current) return;
-    // 使用 rAF 确保 transform 已应用到布局
     const id = requestAnimationFrame(() => {
-      const rectImg = imgRef.current.getBoundingClientRect();
-      const rectCont = containerRef.current.getBoundingClientRect();
-      setImgRect(rectImg);
-      setContRect(rectCont);
+      updateRects();
     });
     return () => cancelAnimationFrame(id);
-  }, [scale, offset, idx]);
+  }, [scale, offset, idx, updateRects]);
   useEffect(()=>{ // 切题重置局部状态（不覆盖 noFlaw）
     setDraftFlaw(null); setOverallTemp({selected:[],byGroup:{}})
     setStartedAt(Date.now()); setScale(1); setOffset({x:0,y:0})
     setSelectedFlawId(null);
     setViewMode('answer')
   },[idx])
+
+  // 当进入“参考答案”或“我的标注”视图时，自动重置缩放与平移，避免圈点位置因放大/拖拽而看起来“移位”
+  useEffect(() => {
+    if (viewMode === 'standard' || viewMode === 'mine') {
+      setScale(1);
+      setOffset({ x: 0, y: 0 });
+    }
+  }, [viewMode]);
 
   // 切题或刷新后，根据已保存记录同步 noFlaw 的勾选状态
   useEffect(()=>{
@@ -740,6 +753,7 @@ export default function Practice(){
                     src={current.url}
                     alt={current.id}
                     draggable={false}
+                    onLoad={updateRects}
                     onError={(e)=>{
                       try{
                         // Try one-time fallback: remove "-<id>" right before the extension and retry

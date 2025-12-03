@@ -37,6 +37,10 @@ export default function Introduction() {
               <h2 style={styles.pageTitle}>实验整体流程概览</h2>
 
               <p style={styles.text}>
+                在正式实验中，您将观看共 600 张由不同模型生成的AI图像，并针对每张图片指出您认为可能存在的异常之处，包括整体违和感或具体细节问题。
+              </p>
+
+              <p style={styles.text}>
                 在阅读完本页内容后，您会进入 Practice 练习环节，我们将为您提供 11 道练习题让您对实验更加熟悉。
                 （Practice 环节只用完成一次，一旦完成，重新登陆账号时您会直接跳转到 Menu 页面）。
               </p>
@@ -129,21 +133,21 @@ export default function Introduction() {
               <img
                 src="/reason1.png"
                 alt="理由示例 1"
-                style={styles.image}
+                style={{ ...styles.image, maxHeight: '48vh' }}
                 onClick={() => setModalImg('/reason1.png')}
               />
 
               <img
                 src="/reason2.png"
                 alt="理由示例 2"
-                style={styles.image}
+                style={{ ...styles.image, maxHeight: '38vh' }}
                 onClick={() => setModalImg('/reason2.png')}
               />
 
               <img
                 src="/reason3.png"
                 alt="理由示例 3"
-                style={styles.image}
+                style={{ ...styles.image, maxHeight: '35vh' }}
                 onClick={() => setModalImg('/reason3.png')}
               />
 
@@ -195,6 +199,10 @@ export default function Introduction() {
 
               <p style={styles.text}>
                 4、有一些特殊的图片，表现得实在太差（例如：画面整体呈现油画风而不是真实摄影风格、图片中有大量的人脸都出现结构异常，或者图片中的所有手都没有自己的形状而是交融在一起等等），已经失去了反馈细节理由的意义，我们称之为可“放弃”的图片。此时您也只需反馈整体理由即可。
+              </p>
+
+              <p style={styles.text}>
+                5、还有一些图片表现得很好，您可能找不出任何破绽，此时您只需要勾选“无明显破绽”即可。
               </p>
 
               <p style={styles.text}>
