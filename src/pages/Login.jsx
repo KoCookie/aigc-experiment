@@ -143,25 +143,34 @@ export default function Login() {
         localStorage.setItem('participant_id', String(existing.id))
         localStorage.setItem('participant_name', cleanName || existing.name || '')
         localStorage.setItem('participant_email', cleanEmail)
-        localStorage.setItem('participant_cohort', existing.cohort || cleanCohort || 'test')
+
+        // 记录用户所属批次（若数据库没有，则回退到当前输入或 'test'）
+        const userCohort = existing.cohort || cleanCohort || 'test'
+        localStorage.setItem('participant_cohort', userCohort)
 
         // ---- determine where to navigate based on practice completion ----
         const { data: pracInfo, error: pracErr } = await supabase
           .from('participants')
           .select('practice_passed')
           .eq('id', existing.id)
-          .maybeSingle();
+          .maybeSingle()
 
-        if (pracErr) throw pracErr;
+        if (pracErr) throw pracErr
 
         if (pracInfo?.practice_passed) {
-          // completed all practice → old user flow
-          navigate('/menu', { replace: true });
+          // 已完成所有练习题
+          if (userCohort === 'pilot') {
+            // pilot 批次：直接进入 Pilot 预实验页面（会自动恢复未完成题目）
+            navigate('/pilot', { replace: true })
+          } else {
+            // 其他批次：进入正式实验菜单
+            navigate('/menu', { replace: true })
+          }
         } else {
-          // not completed practice → continue practice
-          navigate('/practice', { replace: true });
+          // 未完成练习题：继续从 Practice 开始
+          navigate('/practice', { replace: true })
         }
-        return; // prevent falling through
+        return // prevent falling through
       }
     } catch (err) {
       console.error(err)
