@@ -127,13 +127,13 @@ export default function Introduction() {
               <h2 style={styles.pageTitle}>有关于理由选项的说明</h2>
 
               <p style={styles.text}>
-                这一部分的内容需要结合练习进一步加深了解。请别担心您会忘记，通过实验页面右上角的“Tips”按钮您可以随时回顾指导页面的所有内容。
+                具体的理由选项需要结合练习进一步加深了解。请别担心您会忘记本页中相关的说明，通过实验页面右上角的“Tips”按钮您可以随时回顾指导页面的所有内容。
               </p>
 
               <img
                 src="/reason1.png"
                 alt="理由示例 1"
-                style={{ ...styles.image, maxHeight: '48vh' }}
+                style={{ ...styles.image, maxHeight: '62vh' }}
                 onClick={() => setModalImg('/reason1.png')}
               />
 
@@ -147,7 +147,7 @@ export default function Introduction() {
               <img
                 src="/reason3.png"
                 alt="理由示例 3"
-                style={{ ...styles.image, maxHeight: '35vh' }}
+                style={{ ...styles.image, maxHeight: '50vh' }}
                 onClick={() => setModalImg('/reason3.png')}
               />
 
@@ -174,7 +174,7 @@ export default function Introduction() {
               </p>
 
               <p style={styles.text}>
-                6、如果以上都不太匹配，您也可以选择“其他问题”并通过文本进行补充说明。
+                6、如果以上都不太匹配，您也可以查看“其他问题”部分，这其中包含了常见的AI破绽问题。同时，在这个部分我们还提供了“其他”选项方便您通过文本进行必要的补充说明。
               </p>
             </>
           ) : page === 4 ? (

@@ -34,6 +34,11 @@ const OVERALL_GROUPS = [
         label: '不符合现实世界物理逻辑',
         example: '大量车辆在道路逆行、斑马线规划错误、车辆停在停车场边缘等'
       },
+      {
+        key: 'perspective_abnormal',
+        label: '画面透视异常',
+        example: '透视关系失真、背景与主体距离比例不合逻辑等'
+      },
     ]
   }
 ]
@@ -51,7 +56,12 @@ const FLAW_GROUPS = [
       { key: 'ear_count', label: '耳朵数量异常' },
       { key: 'eyebrow_shape', label: '眉毛形状怪异' },
       { key: 'feature_mismatch', label: '特征不符', example: '男头女体、猫长出了马的耳朵' },
-      { key: 'face_repetition', label: '面部重复', example: '图片中不同人的面部完全一样' },
+      { key: 'face_structure', label: '面部整体结构有问题', example: '五官整体位置不协调、面部轮廓畸形等' },
+      {
+        key: 'face_overall_structure',
+        label: '面部整体结构有问题',
+        example: '五官整体位置、大小或形状搭配明显不自然，但很难归类到某一个单独部位的问题',
+      },
     ],
   },
   {
@@ -151,6 +161,7 @@ const FLAW_GROUPS = [
         label: '不符合现实世界物理逻辑',
         example: '生肉和熟食混在一起、人在沙滩上穿羽绒服戴围巾',
       },
+      { key: 'text_abnormal', label: '文字异常', example: '文字表意错误、毫无逻辑、文字显示不完整、字体异常等' },
       {
         key: 'other',
         label: '其他',
@@ -845,9 +856,61 @@ export default function Experiment(){
 }
 
 /* ---------------- 小组件 ---------------- */
+// 可拖动弹窗的通用逻辑（与 Practice 页面保持一致）
+function useDraggableModal() {
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!dragRef.current.dragging) return;
+      const dx = e.clientX - dragRef.current.lastX;
+      const dy = e.clientY - dragRef.current.lastY;
+      dragRef.current.lastX = e.clientX;
+      dragRef.current.lastY = e.clientY;
+      setOffset((prev) => ({
+        x: prev.x + dx,
+        y: prev.y + dy,
+      }));
+    };
+
+    const handleMouseUp = () => {
+      if (dragRef.current.dragging) {
+        dragRef.current.dragging = false;
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  const handleDragMouseDown = (e) => {
+    const target = e.target;
+    // 如果点击的是交互元素（复选框、按钮、文字输入等），则不要触发拖动
+    if (
+      target &&
+      typeof target.closest === 'function' &&
+      target.closest('input, textarea, button, label, select')
+    ) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    dragRef.current.dragging = true;
+    dragRef.current.lastX = e.clientX;
+    dragRef.current.lastY = e.clientY;
+  };
+
+  return { offset, handleDragMouseDown };
+}
 function ProgressBar({percent}){ return (<div style={{width:160,height:10,background:'#0b1220',borderRadius:999,overflow:'hidden'}}><div style={{width:`${percent}%`,height:'100%',background:'#22c55e'}} /></div>) }
 
 function OverallModal({ temp, setTemp, onClose, onConfirm }) {
+  const { offset, handleDragMouseDown } = useDraggableModal();
   const toggle = (g, item) => {
     setTemp(prev => {
       const set = new Set(prev.selected || []);
@@ -863,7 +926,11 @@ function OverallModal({ temp, setTemp, onClose, onConfirm }) {
   const count = temp?.selected?.length || 0
   return (
     <div style={modal.backdrop} onClick={onClose}>
-      <div style={modal.box} onClick={e => e.stopPropagation()}>
+      <div
+        style={{ ...modal.box, transform: `translate(${offset.x}px, ${offset.y}px)` }}
+        onClick={e => e.stopPropagation()}
+        onMouseDown={handleDragMouseDown}
+      >
         <div style={modal.title}>Overall Reasons（多选）</div>
         <div style={{ maxHeight: '60vh', overflow: 'auto', paddingRight: 6 }}>
           {OVERALL_GROUPS.map(g => (
@@ -919,6 +986,7 @@ function OverallModal({ temp, setTemp, onClose, onConfirm }) {
 }
 
 function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
+  const { offset, handleDragMouseDown } = useDraggableModal();
   const [openGroups, setOpenGroups] = useState(() => {
     const init = {}
     FLAW_GROUPS.forEach(g => { init[g.key] = false })
@@ -953,7 +1021,11 @@ function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
 
   return (
     <div style={modal.backdrop} onClick={onClose}>
-      <div style={{...modal.box,width:'min(95vw,940px)'}} onClick={e=>e.stopPropagation()}>
+      <div
+        style={{ ...modal.box, width: 'min(95vw,940px)', transform: `translate(${offset.x}px, ${offset.y}px)` }}
+        onClick={e=>e.stopPropagation()}
+        onMouseDown={handleDragMouseDown}
+      >
         <div style={modal.title}>Flaw Reasons（多选）</div>
         <div style={{maxHeight:'60vh',overflow:'auto',paddingRight:6}}>
           {FLAW_GROUPS.map(g=> {
