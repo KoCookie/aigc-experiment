@@ -16,8 +16,8 @@ const OVERALL_GROUPS = [
       },
       {
         key: 'detail_missing',
-        label: '画面细节缺失严重',
-        example: '人物面部模糊怪异、建筑细节缺失、自然风景细节缺失、大片文字糊成一团等'
+        label: '整体画面模糊或细节缺失严重',
+        example: '整张图片的大面积细节都模糊、不清晰、缺乏纹理，仿佛被“降清晰度”“过度磨皮”或“整体虚焦”处理过。如，大量人物面部模糊怪异、大量建筑细节缺失、大量自然风景细节缺失、所有文字糊成一团等'
       },
       {
         key: 'many_subject_abnormal',
@@ -32,7 +32,7 @@ const OVERALL_GROUPS = [
       {
         key: 'physics_illogical',
         label: '不符合现实世界物理逻辑',
-        example: '大量车辆在道路逆行、斑马线规划错误、车辆停在停车场边缘等'
+        example: '大部分主体都出现异常，如，大量车辆在道路逆行、所有人都在沙滩上着冬装等'
       },
       {
         key: 'perspective_abnormal',
@@ -144,8 +144,8 @@ const FLAW_GROUPS = [
       },
       {
         key: 'blur_detail',
-        label: '模糊或细节缺失',
-        example: '文字/图案模糊不清、眼部细节缺失、牙齿模糊不清、耳朵内部结构模糊不清、霓虹灯模糊一片等',
+        label: '部分画面模糊或细节缺失',
+        example: '只有某一个局部区域缺乏细节，而其他区域正常清晰。属于“局部问题”，不是整张图的问题。如，部分文字/图案模糊不清、面部整体清晰但眼部细节缺失、面部整体清晰但牙齿模糊不清、城市场景其余部分清晰但霓虹灯模糊一片等',
       },
       {
         key: 'odd_structures',
@@ -159,7 +159,7 @@ const FLAW_GROUPS = [
       {
         key: 'physics_logic',
         label: '不符合现实世界物理逻辑',
-        example: '生肉和熟食混在一起、人在沙滩上穿羽绒服戴围巾',
+        example: '部分主体出现怪异情况，如在大部分人都着泳装的沙滩边有一个或几个人穿羽绒服戴围巾',
       },
       { key: 'text_abnormal', label: '文字异常', example: '文字表意错误、毫无逻辑、文字显示不完整、字体异常等' },
       {

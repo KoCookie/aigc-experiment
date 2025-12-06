@@ -41,7 +41,7 @@ export default function Introduction() {
               </p>
 
               <p style={styles.text}>
-                在阅读完本页内容后，您会进入 Practice 练习环节，我们将为您提供 11 道练习题让您对实验更加熟悉。
+                在阅读完本页内容后，您会进入 Practice 练习环节（页面如下图所示），我们将为您提供 11 道练习题让您对实验更加熟悉。
                 （Practice 环节只用完成一次，一旦完成，重新登陆账号时您会直接跳转到 Menu 页面）。
               </p>
               <img
@@ -52,7 +52,7 @@ export default function Introduction() {
               />
 
               <p style={styles.text}>
-                之后您会进入到 Menu 页面，在该页面您会看到您需要完成的四个批次（Batch1、Batch2、Batch3、Batch4）的题目对应的进度及批次入口。
+                之后您会进入到 Menu 页面（如下图所示），在该页面您会看到您需要完成的四个批次（Batch1、Batch2、Batch3、Batch4）的题目对应的进度及批次入口。
                 批次的设计允许您进行适当的休息，每次回到未完成的批次时，您都将从最新进展继续下去。
               </p>
               <img
@@ -63,7 +63,7 @@ export default function Introduction() {
               />
 
               <p style={styles.text}>
-                进入批次后您将正式开始实验（即 Experiment 页面）。后续页面中我们会对实验界面进行更详细的说明。
+                进入批次后您将正式开始实验（即 Experiment 页面，如下图所示）。后续页面中我们会对实验界面进行更详细的说明。
               </p>
               <img
                 src="/experiment.png"
@@ -73,7 +73,7 @@ export default function Introduction() {
               />
 
               <p style={styles.text}>
-                每次退出或完成某个批次后，您都会进入 Result 页面。那里将显示您的整体做题进度，以及返回 Menu 页面的按钮。
+                每次退出或完成某个批次后，您都会进入 Result 页面（如下图所示）。那里将显示您的整体做题进度，以及返回 Menu 页面的按钮。
                 每完成一个批次返回菜单开启下一个即可。
               </p>
               <img
@@ -206,7 +206,7 @@ export default function Introduction() {
               </p>
 
               <p style={styles.text}>
-                总体来说，请尽量通过点击反馈尽可能详细的破绽（比如，图片中有 4 个人，尽管每个人的人脸都有一些问题，也是可“拯救”的，请通过点击反馈细节理由；但如果图片中有十多个人，每个人的人脸都几乎不完整了，想要点击时根本无从下手，就可以“放弃”它们，只反馈整体理由即可）。
+                总体来说，请尽量通过点击反馈尽可能详细的破绽（比如，图片中有 4 个人，尽管每个人的人脸都有一些问题，也是可“拯救”的，请通过点击反馈细节理由；但如果图片中有十多个人，每个人的人脸都几乎不完整了，想要点击时根本无从下手，就可以“放弃”它们，只反馈整体理由即可），您的点击数量没有任何限制。
               </p>
 
               <p style={styles.text}>
