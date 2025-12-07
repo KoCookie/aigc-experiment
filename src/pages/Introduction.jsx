@@ -133,21 +133,21 @@ export default function Introduction() {
               <img
                 src="/reason1.png"
                 alt="理由示例 1"
-                style={{ ...styles.image, maxHeight: '62vh' }}
+                style={{ ...styles.image, maxHeight: '63vh' }}
                 onClick={() => setModalImg('/reason1.png')}
               />
 
               <img
                 src="/reason2.png"
                 alt="理由示例 2"
-                style={{ ...styles.image, maxHeight: '38vh' }}
+                style={{ ...styles.image, maxHeight: '37vh' }}
                 onClick={() => setModalImg('/reason2.png')}
               />
 
               <img
                 src="/reason3.png"
                 alt="理由示例 3"
-                style={{ ...styles.image, maxHeight: '50vh' }}
+                style={{ ...styles.image, maxHeight: '58vh' }}
                 onClick={() => setModalImg('/reason3.png')}
               />
 
