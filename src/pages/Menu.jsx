@@ -142,16 +142,17 @@ export default function Menu() {
             .map(r => Number(r.id))
             .sort((a, b) => a - b);
 
-          // 3）使用固定种子的伪随机数，对所有 image_id 做一次“乱且固定”的全局洗牌
-          //    —— 所有参与者使用相同的种子，因此顺序完全一致
-          const seed = hashStringToSeed('experiment-global-seed-2025-12-02-v3');
+          // 3）使用“按用户固定”的伪随机数，对所有 image_id 做一次洗牌
+          //    —— 不同参与者使用不同的种子，因此每个人的顺序都不一样，
+          //    —— 同一个参与者多次进入时顺序保持稳定
+          const seedStr = `experiment-per-user-seed-2025-12-08-${userId}`;
+          const seed = hashStringToSeed(seedStr);
           const rng = mulberry32(seed);
+          // 使用 Fisher–Yates 洗牌算法生成 per-user 随机顺序
           const shuffled = [...baseIds];
           for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
-            const tmp = shuffled[i];
-            shuffled[i] = shuffled[j];
-            shuffled[j] = tmp;
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
           }
 
           // 4）将洗牌后的列表平均切成 4 个 batch（顺序固定）

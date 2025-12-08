@@ -41,7 +41,7 @@ export default function Introduction() {
               </p>
 
               <p style={styles.text}>
-                在阅读完本页内容后，您会进入 Practice 练习环节（页面如下图所示），我们将为您提供 11 道练习题让您对实验更加熟悉。
+                在阅读完本页内容后，您会进入 Practice 练习环节（页面如下图Fig. 1所示），我们将为您提供 11 道练习题让您对实验更加熟悉。
                 （Practice 环节只用完成一次，一旦完成，重新登陆账号时您会直接跳转到 Menu 页面）。
               </p>
               <img
@@ -50,9 +50,10 @@ export default function Introduction() {
                 style={styles.image}
                 onClick={() => setModalImg('/practice.png')}
               />
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 1  Practice 页面示意图</p>
 
               <p style={styles.text}>
-                之后您会进入到 Menu 页面（如下图所示），在该页面您会看到您需要完成的四个批次（Batch1、Batch2、Batch3、Batch4）的题目对应的进度及批次入口。
+                之后您会进入到 Menu 页面（如下图Fig. 2所示），在该页面您会看到您需要完成的四个批次（Batch1、Batch2、Batch3、Batch4）的题目对应的进度及批次入口。
                 批次的设计允许您进行适当的休息，每次回到未完成的批次时，您都将从最新进展继续下去。
               </p>
               <img
@@ -61,9 +62,10 @@ export default function Introduction() {
                 style={styles.image}
                 onClick={() => setModalImg('/Menu.png')}
               />
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 2  Menu 页面示意图</p>
 
               <p style={styles.text}>
-                进入批次后您将正式开始实验（即 Experiment 页面，如下图所示）。后续页面中我们会对实验界面进行更详细的说明。
+                进入批次后您将正式开始实验（即 Experiment 页面，如下图Fig. 3所示）。后续页面中我们会对实验界面进行更详细的说明。
               </p>
               <img
                 src="/experiment.png"
@@ -71,9 +73,10 @@ export default function Introduction() {
                 style={styles.image}
                 onClick={() => setModalImg('/experiment.png')}
               />
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 3  Experiment 实验页面示意图</p>
 
               <p style={styles.text}>
-                每次退出或完成某个批次后，您都会进入 Result 页面（如下图所示）。那里将显示您的整体做题进度，以及返回 Menu 页面的按钮。
+                每次退出或完成某个批次后，您都会进入 Result 页面（如下图Fig. 4所示）。那里将显示您的整体做题进度，以及返回 Menu 页面的按钮。
                 每完成一个批次返回菜单开启下一个即可。
               </p>
               <img
@@ -82,6 +85,7 @@ export default function Introduction() {
                 style={styles.image}
                 onClick={() => setModalImg('/result.png')}
               />
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 4  Result 页面示意图</p>
             </>
           ) : page === 2 ? (
             <>
@@ -133,7 +137,7 @@ export default function Introduction() {
               <img
                 src="/reason1.png"
                 alt="理由示例 1"
-                style={{ ...styles.image, maxHeight: '63vh' }}
+                style={{ ...styles.image, maxHeight: '69vh' }}
                 onClick={() => setModalImg('/reason1.png')}
               />
 
@@ -147,7 +151,7 @@ export default function Introduction() {
               <img
                 src="/reason3.png"
                 alt="理由示例 3"
-                style={{ ...styles.image, maxHeight: '58vh' }}
+                style={{ ...styles.image, maxHeight: '57vh' }}
                 onClick={() => setModalImg('/reason3.png')}
               />
 

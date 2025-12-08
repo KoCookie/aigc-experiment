@@ -39,6 +39,11 @@ const OVERALL_GROUPS = [
         label: '画面透视异常',
         example: '透视关系失真、背景与主体距离比例不合逻辑等'
       },
+      {
+        key: 'large_text_abnormal',
+        label: '大片文字异常',
+        example: '图片中大面积文字出现异常，包括表意错误、没有逻辑、不是正常语言的文字而是混乱的字符、缺失等'
+      },
     ]
   }
 ]
