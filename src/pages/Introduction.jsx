@@ -86,6 +86,9 @@ export default function Introduction() {
                 onClick={() => setModalImg('/result.png')}
               />
               <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 4  Result 页面示意图</p>
+              <p style={styles.text}>
+                你可以随时中断做题，每次要中断之前请先退出（点击实验页面右上角的“Exit”按钮）去到Result页面后再关闭网站。当你重新登录账号继续之前没有做完的batch时，页面会自动跳转到最新一道未完成的题目。
+              </p>
             </>
           ) : page === 2 ? (
             <>
