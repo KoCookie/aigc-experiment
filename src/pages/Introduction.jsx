@@ -56,7 +56,7 @@ export default function Introduction() {
                 批次的设计允许您进行适当的休息，每次回到未完成的批次时，您都将从最新进展继续下去。
               </p>
               <img
-                src="/Menu.png"
+                src="/menu.png"
                 alt="Menu 页面示意图"
                 style={styles.image}
                 onClick={() => setModalImg('/Menu.png')}
