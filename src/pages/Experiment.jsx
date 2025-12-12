@@ -61,12 +61,8 @@ const FLAW_GROUPS = [
       { key: 'ear_count', label: '耳朵数量异常' },
       { key: 'eyebrow_shape', label: '眉毛形状怪异' },
       { key: 'feature_mismatch', label: '特征不符', example: '男头女体、猫长出了马的耳朵' },
+      { key: 'face_repetition', label: '面部重复', example: '图片中不同人的面部完全一样' },
       { key: 'face_structure', label: '面部整体结构有问题', example: '五官整体位置不协调、面部轮廓畸形等' },
-      {
-        key: 'face_overall_structure',
-        label: '面部整体结构有问题',
-        example: '五官整体位置、大小或形状搭配明显不自然，但很难归类到某一个单独部位的问题',
-      },
     ],
   },
   {
