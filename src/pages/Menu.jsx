@@ -103,9 +103,9 @@ export default function Menu() {
               completed_count: Number(r.completed_count || 0),
               skipped_count: Number(r.skipped_count || 0),
               progress_percent: (Number(r.total_count) > 0)
-                ? Math.round(((Number(r.completed_count) + Number(r.skipped_count)) / Number(r.total_count)) * 100)
+                ? Math.round((Number(r.completed_count) / Number(r.total_count)) * 100)
                 : 0,
-              is_finished: Boolean(r.is_finished)
+              is_finished: Number(r.total_count) > 0 && Number(r.completed_count) >= Number(r.total_count)
             }));
             setProgress(aggFromView);
             setLoading(false);
@@ -315,9 +315,8 @@ export default function Menu() {
             if (completedById.has(id)) completed++;
             else if (skippedById.has(id)) skipped++;
           }
-          const answered = completed + skipped;
-          const percent = total > 0 ? Math.round((answered / total) * 100) : 0;
-          const is_finished = total > 0 && answered >= total;
+          const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+          const is_finished = total > 0 && completed >= total;
           return {
             batch_no: b.batch_no,
             total_count: total,
@@ -360,13 +359,7 @@ export default function Menu() {
         navigate('/');
         return;
       }
-      const b = getBatch(batchNo);
-      if (b.is_finished) {
-        // If a batch is fully answered, send to result page so they can decide next.
-        navigate(`/result?batch=${batchNo}`);
-      } else {
-        navigate(`/batch/${batchNo}`);
-      }
+      navigate(`/batch/${batchNo}`);
     } catch (e) {
       console.error(e);
       setErr(e.message || 'Failed to enter batch');
