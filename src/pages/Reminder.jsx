@@ -59,13 +59,13 @@ export default function Reminder() {
                 className="text-2xl sm:text-3xl font-extrabold tracking-tight"
                 style={{ fontSize: 24, fontWeight: 800, margin: 0 }}
               >
-                观看环境提醒
+                Viewing Environment Reminder
               </h1>
               <p
                 className="mt-2 text-slate-300 leading-relaxed"
                 style={{ marginTop: 8, color: "#cbd5e1", lineHeight: 1.7 }}
               >
-                为了能让您更准确地评估图片质量，请您花一点时间做以下简单调整：
+                To help you evaluate image quality more accurately, please take a moment to make these simple adjustments:
               </p>
 
               <ol
@@ -73,14 +73,14 @@ export default function Reminder() {
                 style={{ marginTop: 20, paddingLeft: 20, color: "#e2e8f0", lineHeight: 1.7 }}
               >
                 <li>
-                  为了保证图片显示效果更加稳定，我们
-                  <span className="font-medium" style={{ fontWeight: 600 }}>推荐使用 Chrome 或 Edge 浏览器</span>
-                  打开本网站。如果您目前使用的是其他浏览器，且条件允许，辛苦您尽量改用 Chrome / Edge 重新打开本页面。
+                  For more stable image rendering, we
+                  <span className="font-medium" style={{ fontWeight: 600 }}>recommend using Chrome or Edge</span>
+                  to open this website. If you are using another browser and it is convenient, please switch to Chrome/Edge and reopen this page.
                 </li>
                 <li>
-                  请在
-                  <span className="font-medium" style={{ fontWeight: 600 }}>较为明亮、接近自然日光的环境下</span>
-                  进行实验，并尽量避免屏幕上出现明显的灯光或窗户反光，以便您可以更清楚地看到图像细节。
+                  Please conduct the experiment in a
+                  <span className="font-medium" style={{ fontWeight: 600 }}>bright environment close to natural daylight</span>
+                  and avoid obvious reflections from lights or windows on the screen so you can see image details clearly.
                 </li>
               </ol>
 
@@ -88,7 +88,7 @@ export default function Reminder() {
                 className="mt-6 text-slate-300"
                 style={{ marginTop: 24, color: "#cbd5e1" }}
               >
-                感谢您的配合！一个中性的观看环境能让您的评估结果更可靠。
+                Thank you for your cooperation! A neutral viewing environment makes your evaluations more reliable.
               </p>
 
               <div className="mt-8 flex items-center gap-3" style={{ marginTop: 32, display: "flex", alignItems: "center", gap: 12 }}>
@@ -104,10 +104,10 @@ export default function Reminder() {
                     fontWeight: 600,
                   }}
                 >
-                  我已了解
+                  Got it
                 </button>
                 <span className="text-xs text-slate-400" style={{ fontSize: 12, color: "#94a3b8" }}>
-                  点击“我已了解”将进入登录页面
+                  Clicking "Got it" will take you to the login page
                 </span>
               </div>
             </div>

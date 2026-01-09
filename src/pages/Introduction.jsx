@@ -31,68 +31,68 @@ export default function Introduction() {
 
       <main style={styles.centerWrap}>
         <section style={styles.card}>
-          <p style={styles.introText}>首先，感谢您抽出宝贵的时间配合实验！请您仔细阅读以下的指导说明，确保您对整个实验有完整的了解，方便后续实验的开展。</p>
+          <p style={styles.introText}>First, thank you for taking the time to participate! Please read the guidance below carefully to ensure you fully understand the study before continuing.</p>
           {page === 1 ? (
             <>
-              <h2 style={styles.pageTitle}>实验整体流程概览</h2>
+              <h2 style={styles.pageTitle}>Overview of the Study Flow</h2>
 
               <p style={styles.text}>
-                在正式实验中，您将观看共 600 张由不同模型生成的AI图像，并针对每张图片指出您认为可能存在的异常之处，包括整体违和感或具体细节问题。
+                In the main study, you will review 600 AI-generated images from different models and identify any anomalies you notice, including overall inconsistencies or specific detail issues.
               </p>
 
               <p style={styles.text}>
-                在阅读完本页内容后，您会进入 Practice 练习环节（页面如下图Fig. 1所示），我们将为您提供 11 道练习题让您对实验更加熟悉。
-                （Practice 环节只用完成一次，一旦完成，重新登陆账号时您会直接跳转到 Menu 页面）。
+                After this page, you will enter the Practice section (shown in Fig. 1). We provide 11 practice items to help you get familiar with the task.
+                (Practice only needs to be completed once. After completion, future logins will take you directly to the Menu page.)
               </p>
               <img
                 src="/practice.png"
-                alt="Practice 页面示意图"
+                alt="Practice page preview"
                 style={styles.image}
                 onClick={() => setModalImg('/practice.png')}
               />
-              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 1  Practice 页面示意图</p>
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 1  Practice page preview</p>
 
               <p style={styles.text}>
-                之后您会进入到 Menu 页面（如下图Fig. 2所示），在该页面您会看到您需要完成的四个批次（Batch1、Batch2、Batch3、Batch4）的题目对应的进度及批次入口。
-                批次的设计允许您进行适当的休息，每次回到未完成的批次时，您都将从最新进展继续下去。
+                Next you will enter the Menu page (Fig. 2), where you can see the progress and entry points for four batches (Batch 1-4).
+                The batch design allows you to take breaks; when you return to an unfinished batch, you will continue from your latest progress.
               </p>
               <img
                 src="/menu.png"
-                alt="Menu 页面示意图"
+                alt="Menu page preview"
                 style={styles.image}
                 onClick={() => setModalImg('/Menu.png')}
               />
-              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 2  Menu 页面示意图</p>
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 2  Menu page preview</p>
 
               <p style={styles.text}>
-                进入批次后您将正式开始实验（即 Experiment 页面，如下图Fig. 3所示）。后续页面中我们会对实验界面进行更详细的说明。
+                After entering a batch, you will begin the experiment (the Experiment page, Fig. 3). Later pages provide more detailed instructions about the interface.
               </p>
               <img
                 src="/experiment.png"
-                alt="Experiment 页面示意图"
+                alt="Experiment page preview"
                 style={styles.image}
                 onClick={() => setModalImg('/experiment.png')}
               />
-              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 3  Experiment 实验页面示意图</p>
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 3  Experiment page preview</p>
 
               <p style={styles.text}>
-                每次退出或完成某个批次后，您都会进入 Result 页面（如下图Fig. 4所示）。那里将显示您的整体做题进度，以及返回 Menu 页面的按钮。
-                每完成一个批次返回菜单开启下一个即可。
+                Each time you exit or finish a batch, you will go to the Result page (Fig. 4). It shows your overall progress and a button to return to the Menu page.
+                After finishing a batch, return to the menu to start the next one.
               </p>
               <img
                 src="/result.png"
-                alt="Result 页面示意图"
+                alt="Result page preview"
                 style={styles.image}
                 onClick={() => setModalImg('/result.png')}
               />
-              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 4  Result 页面示意图</p>
+              <p style={{ ...styles.text, textAlign: 'center' }}>Fig. 4  Result page preview</p>
               <p style={styles.text}>
-                你可以随时中断做题，每次要中断之前请先退出（点击实验页面右上角的“Exit”按钮）去到Result页面后再关闭网站。当你重新登录账号继续之前没有做完的batch时，页面会自动跳转到最新一道未完成的题目。
+                You can pause at any time. Before leaving, click "Exit" in the top-right of the Experiment page to go to the Result page, then close the site. When you log in again, you will be taken to the latest unfinished item in that batch.
               </p>
             </>
           ) : page === 2 ? (
             <>
-              <h2 style={styles.pageTitle}>实验页面操作介绍</h2>
+              <h2 style={styles.pageTitle}>Experiment Page Walkthrough</h2>
 
               <img
                 src="/Experiment1.png"
@@ -131,151 +131,148 @@ export default function Introduction() {
             </>
           ) : page === 3 ? (
             <>
-              <h2 style={styles.pageTitle}>有关于理由选项的说明</h2>
+              <h2 style={styles.pageTitle}>Notes on Reason Options</h2>
 
               <p style={styles.text}>
-                具体的理由选项需要结合练习进一步加深了解。请别担心您会忘记本页中相关的说明，通过实验页面右上角的“Tips”按钮您可以随时回顾指导页面的所有内容。
+                The reason options are best understood through practice. Do not worry about forgetting these notes. You can always review all guidance using the "Tips" button in the top-right of the Experiment page.
               </p>
 
               <img
                 src="/reason1.png"
-                alt="理由示例 1"
+                alt="Reason example 1"
                 style={{ ...styles.image, maxHeight: '69vh' }}
                 onClick={() => setModalImg('/reason1.png')}
               />
 
               <img
                 src="/reason2.png"
-                alt="理由示例 2"
+                alt="Reason example 2"
                 style={{ ...styles.image, maxHeight: '37vh' }}
                 onClick={() => setModalImg('/reason2.png')}
               />
 
               <img
                 src="/reason3.png"
-                alt="理由示例 3"
+                alt="Reason example 3"
                 style={{ ...styles.image, maxHeight: '57vh' }}
                 onClick={() => setModalImg('/reason3.png')}
               />
 
               <p style={styles.text}>
-                1、面部问题不仅限于人，还可以是动物、乐高积木人等具有“脸部”的对象。
+                1. Face issues are not limited to humans; they can also apply to animals, LEGO figures, or any object with a "face."
               </p>
 
               <p style={styles.text}>
-                2、毛发问题可以指人的头发、动物的毛发，甚至毛衣、围巾等织物上明显的毛发；
-                如果您感觉这些毛发的形状、走向或连接方式明显不自然，可以选择“毛发问题”。
+                2. Hair/fur issues can refer to human hair, animal fur, or even visible fibers on clothing such as sweaters or scarves.
+                If the hair or fibers look clearly unnatural in shape, direction, or connection, choose "Hair/Fur Issues."
               </p>
 
               <p style={styles.text}>
-                3、手部问题专指人的手部；动物的手足通常归为“身体问题”，
-                其他类似手的形状（例如乐高小人的手）一般归为“物体问题”。
+                3. Hand issues refer specifically to human hands. Animal paws are usually considered "Body Issues,"
+                and hand-like shapes (e.g., LEGO hands) are generally "Object Issues."
               </p>
 
               <p style={styles.text}>
-                4、身体问题可以包含人、动物或积木人的身体、躯干和肢干。
+                4. Body issues can include the body, torso, and limbs of humans, animals, or toy figures.
               </p>
 
               <p style={styles.text}>
-                5、物体问题则覆盖更广，包括食物、积木、绘画、生活用品等。
+                5. Object issues cover a broad range, including food, blocks, paintings, and daily items.
               </p>
 
               <p style={styles.text}>
-                6、如果以上都不太匹配，您也可以查看“其他问题”部分，这其中包含了常见的AI破绽问题。同时，在这个部分我们还提供了“其他”选项方便您通过文本进行必要的补充说明。
+                6. If none of the above fits well, see "Other Issues," which includes common AI artifacts. This section also provides an "Other" option where you can add a brief text note.
               </p>
             </>
           ) : page === 4 ? (
             <>
-              <h2 style={styles.pageTitle}>有关于反馈理由的说明</h2>
+              <h2 style={styles.pageTitle}>How to Provide Reasons</h2>
 
               <p style={styles.text}>
-                在反馈理由时您可能会遇到几种情况：
+                You may encounter several cases when providing reasons:
               </p>
 
               <p style={styles.text}>
-                1、图片在整体上有破绽或不自然的地方，如色调奇怪、整体 CG 感太重等等，但是细节上没什么错误，此时可以只反馈整体理由。
+                1. The image has overall issues (e.g., strange tones or overly strong CG feel) but no obvious detail errors. In this case, provide only overall reasons.
               </p>
 
               <p style={styles.text}>
-                2、图片在整体上表现良好，但是细节处有破绽，如人体结构、物品位置等等，此时您可以只通过点击反馈细节理由。
+                2. The image looks good overall, but there are detail flaws (e.g., body structure, object position). In this case, you can provide detail reasons by clicking only.
               </p>
 
               <p style={styles.text}>
-                3、图片在整体和细节两方面都存在破绽，此时您需要综合考虑，不仅反馈整体层面的问题，也要通过点击反馈细节上的破绽。
+                3. The image has issues at both overall and detail levels. In this case, provide overall reasons and also click to indicate detail flaws.
               </p>
 
               <p style={styles.text}>
-                4、有一些特殊的图片，表现得实在太差（例如：画面整体呈现油画风而不是真实摄影风格、图片中有大量的人脸都出现结构异常，或者图片中的所有手都没有自己的形状而是交融在一起等等），已经失去了反馈细节理由的意义，我们称之为可“放弃”的图片。此时您也只需反馈整体理由即可。
+                4. Some images are so poor (e.g., looks like a painting rather than a real photo, many faces are structurally broken, or all hands blend together) that providing detail reasons is not meaningful. We call these "skippable" images. In this case, provide only overall reasons.
               </p>
 
               <p style={styles.text}>
-                5、还有一些图片表现得很好，您可能找不出任何破绽，此时您只需要勾选“无明显破绽”即可。
+                5. Some images look good and you cannot find any flaws. In this case, just check "No obvious flaws."
               </p>
 
               <p style={styles.text}>
-                总体来说，请尽量通过点击反馈尽可能详细的破绽（比如，图片中有 4 个人，尽管每个人的人脸都有一些问题，也是可“拯救”的，请通过点击反馈细节理由；但如果图片中有十多个人，每个人的人脸都几乎不完整了，想要点击时根本无从下手，就可以“放弃”它们，只反馈整体理由即可），您的点击数量没有任何限制。
+                In general, try to mark flaws as precisely as possible via clicks. For example, if there are four people and each face has issues, the image is still "salvageable" and you should click to report detail reasons. But if there are many people and faces are severely broken to the point where clicking is impractical, you can "skip" detail reasons and provide only overall reasons. There is no limit on the number of clicks.
               </p>
 
               <p style={styles.text}>
-                最重要的是，请相信自己的判断。您做出任何判断都是“正确”的，没有所谓的标准答案，我们想要得到的就是您主观感受的反馈。
+                Most importantly, trust your judgment. There are no "correct" answers. We want your subjective feedback.
               </p>
             </>
           ) : page === 5 ? (
             <>
-              <h2 style={styles.pageTitle}>在 Practice 阶段您需要达到的效果</h2>
+              <h2 style={styles.pageTitle}>Goals for the Practice Stage</h2>
 
               <p style={styles.text}>
-                在 Practice 阶段，您需要达到的预计效果包括以下几个方面：
+                In the Practice stage, the expected outcomes include:
               </p>
 
               <p style={styles.text}>
-                1、熟悉页面操作和整体实验流程，了解在正式实验中每一步应该如何进行操作。
+                1. Become familiar with the interface and overall workflow, and understand how to perform each step in the main study.
               </p>
 
               <p style={styles.text}>
-                2、在实践中进一步熟悉各个理由选项的含义，体会在不同类型的图片中应该如何选择合适的理由进行反馈。
+                2. Learn the meaning of each reason option and practice choosing appropriate reasons for different types of images.
               </p>
 
               <p style={styles.text}>
-                3、逐渐感受哪些图片是可以“放弃”的——例如当整体质量已经非常差、细节几乎无从点击时，可以只反馈整体理由而不必纠结每一个细节。
+                3. Get a feel for which images can be "skipped" for detail marking, for example when overall quality is very poor and details are nearly impossible to click. In such cases, provide only overall reasons.
               </p>
 
               <p style={styles.text}>
-                特别提醒：我们再次强调，本实验中没有所谓的“正确答案”！您的判断都是“正确”的，您甚至可以不认可参考答案给出的某些破绽或理由。
-                最重要的是根据您对图片的真实感受来进行反馈。
+                Reminder: there are no "correct answers" in this study. Your judgments are all valid, and you may even disagree with some flaws or reasons shown in the reference answers.
+                What matters most is your genuine perception of the image.
               </p>
 
               <p style={styles.text}>
-                Practice 阶段提供的参考答案，主要是帮助您体会在正式实验中我们希望您进行到怎样的反馈颗粒度，而不是用来评判您的“对错”。
+                The reference answers in Practice are meant to illustrate the level of detail we expect in the main study, not to judge right or wrong.
               </p>
             </>
           ) : page === 6 ? (
             <>
-              <h2 style={styles.pageTitle}>关于点击图片的特别说明</h2>
+              <h2 style={styles.pageTitle}>Notes on Clicking the Image</h2>
 
               <p style={styles.text}>
-                1、首先，您需要知道，我们希望通过点击来模拟您的注视，也就是说，您的点击代表您在图片中注视停留的地方。
-                所以当出现单次点击无法覆盖整个破绽的情况时（例如，您觉得整根手指都有结构问题，但是一次点击的小圆圈无法覆盖整根手指；
-                或者马匹的上下半身比例不协调，但是一次点击的小圆圈无法覆盖整个马匹的下半身），
-                您无需纠结，也无需通过多次点击覆盖整个有问题的部分，只需要保证您有一次点击落在该区域即可，代表您观察了这个部分。
+                1. We use clicks to approximate where your gaze lands. Your click represents where you looked.
+                If one click cannot cover the entire flawed area (e.g., an entire finger looks wrong but a single circle is too small, or a horse has disproportional body parts), do not worry.
+                You do not need to cover the whole area with multiple clicks. One click in that region is enough to indicate you inspected it.
               </p>
 
               <p style={styles.text}>
-                2、其次，在您点击时，只有鼠标所在的位置（即小圆圈的圆心位置）是有效的反馈。
-                所以当遇到单次点击覆盖多个破绽的情况时，您不能被圆圈的范围“迷惑”，需要确保点击每一处破绽。
-                例如，人脸上两只眼睛都有破绽。
-                您点击其中一只，画面中出现的圆圈较大，会同时圈住另一只眼睛，但这并不代表另一只眼睛也被圈选进了有效的反馈范围，
-                您仍然需要再次点击另外一只眼睛来进行反馈。
+                2. Only the exact click position (the circle center) counts as a valid mark.
+                If one circle visually covers multiple flaws, do not be misled by its size. Make sure you click each flawed area separately.
+                For example, if both eyes are flawed and you click one eye, the circle may also cover the other eye, but that does not count. You still need to click the other eye.
               </p>
 
               <p style={styles.text}>
-                3、在您放大或缩小图片的过程中，圆圈的位置可能会出现“飘移”。
-                此时您只需要正常观察，最后通过“Reset”按钮让小圆圈归位。
-                任何圆圈位置异常的情况都可以通过“Reset”按钮解决。
+                3. When zooming in or out, circles may appear to drift.
+                This is normal. Just keep observing, and use the "Reset" button to realign the circles.
+                Any circle misalignment can be fixed with "Reset."
               </p>
             </>
           ) : (
-            <p style={styles.text}>Page {page} 内容稍后将在这里展示。</p>
+            <p style={styles.text}>Page {page} content will be shown here later.</p>
           )}
 
           <div style={styles.buttons}>
@@ -306,7 +303,7 @@ export default function Introduction() {
       </main>
       {modalImg && (
         <div style={styles.modalOverlay} onClick={() => setModalImg(null)}>
-          <img src={modalImg} style={styles.modalImage} alt="放大预览" />
+          <img src={modalImg} style={styles.modalImage} alt="Zoomed preview" />
         </div>
       )}
     </div>

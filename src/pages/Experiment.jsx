@@ -3,46 +3,46 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import supabase from '../supabaseClient'
 
-/* ---------------- 选项字典（保留你已定稿的结构） ---------------- */
+/* ---------------- Options dictionary (keep your approved structure) ---------------- */
 const OVERALL_GROUPS = [
   {
     key: 'overall',
-    title: '整体理由 (Overall Reasons)',
+    title: 'Overall Reasons',
     items: [
       {
         key: 'style_unreal',
-        label: '整体画面风格不自然',
-        example: '油画风、素描风、光线怪异、聚焦异常、画面失真、人物皮肤过于光滑如同假人、动物毛发不自然、主体与背景不融合有“贴图感”、主体边缘模糊或异常、AI感过重、人物表情重复、眼神僵硬空洞等'
+        label: 'Overall visual style looks unnatural',
+        example: 'Oil-painting look, sketch look, strange lighting, abnormal focus, image distortion, skin overly smooth like a mannequin, unnatural animal fur, subject/background not blending with a "sticker" feel, blurred or abnormal subject edges, overly strong AI look, repeated facial expressions, stiff/blank eyes, etc.'
       },
       {
         key: 'detail_missing',
-        label: '整体画面模糊或细节缺失严重',
-        example: '整张图片的大面积细节都模糊、不清晰、缺乏纹理，仿佛被“降清晰度”“过度磨皮”或“整体虚焦”处理过。如，大量人物面部模糊怪异、大量建筑细节缺失、大量自然风景细节缺失、所有文字糊成一团等'
+        label: 'Overall image is blurry or has severe detail loss',
+        example: 'Large areas of the image are blurry/unclear and lack texture, as if "reduced sharpness", "over-smoothed", or "globally defocused". For example: many faces are blurry/odd, building details missing, landscape details missing, all text smeared together.'
       },
       {
         key: 'many_subject_abnormal',
-        label: '大量主体异常',
-        example: '多个人的肢体结构或数量异常、多人互动动作不协调、多个动物有多头或多肢体、每一只手的手指数量和手部结构都怪异、画面中多个人或动物的身材比例异常、物品的整体材质或纹理不真实等'
+        label: 'Many subjects are abnormal',
+        example: 'Many people have abnormal limb structure/count, group interactions are uncoordinated, multiple animals have multiple heads/limbs, every hand has weird finger counts/structures, many people/animals have abnormal proportions, overall object materials/textures look unreal, etc.'
       },
       {
         key: 'many_composition_abnormal',
-        label: '大量组合异常',
-        example: '画面中大量遮挡、透视关系异常、大量肢体横穿或断裂等'
+        label: 'Many composition issues',
+        example: 'Many occlusions, abnormal perspective relationships, many limbs crossing through or broken, etc.'
       },
       {
         key: 'physics_illogical',
-        label: '不符合现实世界物理逻辑',
-        example: '大部分主体都出现异常，如，大量车辆在道路逆行、所有人都在沙滩上着冬装等'
+        label: 'Violates real-world physics',
+        example: 'Most subjects are abnormal, e.g., many vehicles driving the wrong way, everyone wearing winter clothes on a beach, etc.'
       },
       {
         key: 'perspective_abnormal',
-        label: '画面透视异常',
-        example: '透视关系失真、背景与主体距离比例不合逻辑等'
+        label: 'Abnormal perspective',
+        example: 'Distorted perspective, illogical distance ratios between background and subject, etc.'
       },
       {
         key: 'large_text_abnormal',
-        label: '大片文字异常',
-        example: '图片中大面积文字出现异常，包括表意错误、没有逻辑、不是正常语言的文字而是混乱的字符、缺失等'
+        label: 'Large-area text is abnormal',
+        example: 'Large areas of text are abnormal, including wrong meaning, no logic, not a real language but garbled characters, missing text, etc.'
       },
     ]
   }
@@ -50,129 +50,129 @@ const OVERALL_GROUPS = [
 const FLAW_GROUPS = [
   {
     key: 'face',
-    title: '面部问题',
+    title: 'Face Issues',
     items: [
-      { key: 'eye_structure', label: '眼部结构或位置异常', example: '眼球大小、双眼皮形状、睫毛形状' },
-      { key: 'eye_gaze', label: '眼神空洞/注视方向不合理' },
-      { key: 'nose_structure', label: '鼻子结构或位置异常' },
-      { key: 'mouth_structure', label: '嘴部结构或位置异常' },
-      { key: 'teeth_structure', label: '牙齿结构或数量异常' },
-      { key: 'ear_structure', label: '耳朵结构或位置异常' },
-      { key: 'ear_count', label: '耳朵数量异常' },
-      { key: 'eyebrow_shape', label: '眉毛形状怪异' },
-      { key: 'feature_mismatch', label: '特征不符', example: '男头女体、猫长出了马的耳朵' },
-      { key: 'face_repetition', label: '面部重复', example: '图片中不同人的面部完全一样' },
-      { key: 'face_structure', label: '面部整体结构有问题', example: '五官整体位置不协调、面部轮廓畸形等' },
+      { key: 'eye_structure', label: 'Abnormal eye structure or placement', example: 'Eyeball size, eyelid shape, eyelash shape' },
+      { key: 'eye_gaze', label: 'Blank stare / unreasonable gaze direction' },
+      { key: 'nose_structure', label: 'Abnormal nose structure or placement' },
+      { key: 'mouth_structure', label: 'Abnormal mouth structure or placement' },
+      { key: 'teeth_structure', label: 'Abnormal teeth structure or count' },
+      { key: 'ear_structure', label: 'Abnormal ear structure or placement' },
+      { key: 'ear_count', label: 'Abnormal ear count' },
+      { key: 'eyebrow_shape', label: 'Odd eyebrow shape' },
+      { key: 'feature_mismatch', label: 'Mismatched features', example: 'Male head on female body, cat with horse ears' },
+      { key: 'face_repetition', label: 'Repeated faces', example: 'Different people have exactly the same face' },
+      { key: 'face_structure', label: 'Overall facial structure is wrong', example: 'Misaligned facial features, deformed facial contours, etc.' },
     ],
   },
   {
     key: 'hair',
-    title: '毛发问题',
+    title: 'Hair/Fur Issues',
     items: [
-      { key: 'hair_shape', label: '头发或毛发形状/纹理异常', example: '不连续、断裂、有断裂感' },
-      { key: 'hair_texture', label: '头发或毛发质感不真实' },
+      { key: 'hair_shape', label: 'Abnormal hair/fur shape or texture', example: 'Discontinuous, broken, looks fractured' },
+      { key: 'hair_texture', label: 'Unrealistic hair/fur material/feel' },
     ],
   },
   {
     key: 'hands',
-    title: '手部问题',
+    title: 'Hand Issues',
     items: [
-      { key: 'finger_count', label: '手指数量异常' },
-      { key: 'hand_pose', label: '手部姿势不自然或不可能' },
-      { key: 'nail_detail', label: '指甲/皮纹细节异常' },
-      { key: 'hand_structure', label: '手部结构异常' },
+      { key: 'finger_count', label: 'Abnormal finger count' },
+      { key: 'hand_pose', label: 'Unnatural or impossible hand pose' },
+      { key: 'nail_detail', label: 'Abnormal nail/skin detail' },
+      { key: 'hand_structure', label: 'Abnormal hand structure' },
     ],
   },
   {
     key: 'body',
-    title: '身体问题',
+    title: 'Body Issues',
     items: [
       {
         key: 'body_structure',
-        label: '身体结构异常',
-        example: '关节角度不合理、足背过厚、脚趾形状畸形、鸟类翅膀断裂、斑马身体花纹模糊或走向异常等',
+        label: 'Abnormal body structure',
+        example: 'Unreasonable joint angles, overly thick instep, deformed toes, broken bird wings, zebra stripes blurred or running the wrong way, etc.',
       },
       {
         key: 'body_part_count',
-        label: '身体部位数量异常',
-        example: '人类肢体数量异常、动物出现多个头部等',
+        label: 'Abnormal number of body parts',
+        example: 'Humans with wrong limb count, animals with multiple heads, etc.',
       },
       {
         key: 'body_proportion',
-        label: '身体比例不自然',
-        example: '脖子过长/肩膀过宽或过窄/四肢过长或过短/上下半身比例失调/四肢粗细异常等',
+        label: 'Unnatural body proportions',
+        example: 'Neck too long / shoulders too wide or narrow / limbs too long or short / upper vs lower body proportions are off / abnormal limb thickness, etc.',
       },
     ],
   },
   {
     key: 'objects',
-    title: '物体问题',
+    title: 'Object Issues',
     items: [
       {
         key: 'object_structure',
-        label: '物体结构异常',
-        example: '衣物纹理异常或不连续、饰品突然断裂、弯曲、扭曲、地面塌陷、树木折断',
+        label: 'Abnormal object structure',
+        example: 'Clothing textures abnormal or discontinuous, accessories suddenly broken/bent/twisted, ground collapses, trees snapped',
       },
       {
         key: 'object_position',
-        label: '物体出现位置异常',
-        example: '耳饰戴在手上、乐高积木悬空',
+        label: 'Object appears in abnormal position',
+        example: 'Earrings on hands, LEGO pieces floating',
       },
       {
         key: 'object_scale',
-        label: '物体大小/比例不合理、不自然、不协调',
+        label: 'Object size/scale unreasonable, unnatural, or inconsistent',
       },
       {
         key: 'object_color',
-        label: '颜色分布异常',
-        example: '色块突变、不均匀',
+        label: 'Abnormal color distribution',
+        example: 'Abrupt blocks, uneven distribution',
       },
       {
         key: 'object_material',
-        label: '材质表现不真实',
-        example: '金属反射、玻璃、布料',
+        label: 'Unrealistic material rendering',
+        example: 'Metal reflections, glass, fabric',
       },
     ],
   },
   {
     key: 'others',
-    title: '其他问题',
+    title: 'Other Issues',
     items: [
       {
         key: 'lighting_shadow',
-        label: '光照/阴影异常',
-        example: '光线方向奇怪、仅一处亮/暗、阴影不合理、反向或漂浮阴影、聚焦异常、局部虚焦',
+        label: 'Abnormal lighting/shadows',
+        example: 'Weird light direction, only one bright/dark spot, unreasonable shadows, inverted/floating shadows, abnormal focus, local defocus',
       },
       {
         key: 'blur_detail',
-        label: '部分画面模糊或细节缺失',
-        example: '只有某一个局部区域缺乏细节，而其他区域正常清晰。属于“局部问题”，不是整张图的问题。如，部分文字/图案模糊不清、面部整体清晰但眼部细节缺失、面部整体清晰但牙齿模糊不清、城市场景其余部分清晰但霓虹灯模糊一片等',
+        label: 'Parts of the image are blurry or missing detail',
+        example: 'Only a local area lacks detail while the rest is clear. This is a "local issue", not a whole-image issue. For example: some text/patterns are blurry, face overall clear but eye details missing, face clear but teeth blurry, city scene clear but neon signs blurred, etc.',
       },
       {
         key: 'odd_structures',
-        label: '出现突兀、不相关的结构',
+        label: 'Abrupt or irrelevant structures appear',
       },
       {
         key: 'subject_edges',
-        label: '主体边缘异常',
-        example: '模糊、与物品或背景融合',
+        label: 'Abnormal subject edges',
+        example: 'Blurry, blending with objects or background',
       },
       {
         key: 'physics_logic',
-        label: '不符合现实世界物理逻辑',
-        example: '部分主体出现怪异情况，如在大部分人都着泳装的沙滩边有一个或几个人穿羽绒服戴围巾',
+        label: 'Violates real-world physics',
+        example: 'Some subjects are odd, e.g., one or more people wearing down coats and scarves on a beach where most people are in swimwear',
       },
-      { key: 'text_abnormal', label: '文字异常', example: '文字表意错误、毫无逻辑、文字显示不完整、字体异常等' },
+      { key: 'text_abnormal', label: 'Text abnormalities', example: 'Wrong meaning, nonsensical, incomplete text, abnormal font, etc.' },
       {
         key: 'other',
-        label: '其他',
+        label: 'Other',
         hasTextInput: true,
       },
     ],
   },
 ]
 
-/* ---------------- 工具 ---------------- */
+/* ---------------- Utilities ---------------- */
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v))
 const deepClone = (o) => JSON.parse(JSON.stringify(o||{}))
 const uid = () => Math.random().toString(36).slice(2,10)
@@ -182,7 +182,7 @@ export default function Experiment(){
   const navigate = useNavigate()
   const params = useParams()
 
-  // 支持多种路由写法：/batch/:batchNo 或 /batch/:id 或 /batch/:batch
+  // Support multiple route formats: /batch/:batchNo or /batch/:id or /batch/:batch
   const rawBatch =
     params.batchNo ??
     params.id ??
@@ -194,7 +194,7 @@ export default function Experiment(){
   const participantId = localStorage.getItem('participant_id')
   const location = useLocation()
 
-  // 保持 current_batch_no 与当前 batch 一致（方便刷新后恢复对应批次）
+  // Keep current_batch_no in sync with batch (restore after refresh)
   useEffect(() => {
     if (!Number.isNaN(batchNo)) {
       localStorage.setItem('current_batch_no', String(batchNo))
@@ -215,15 +215,15 @@ export default function Experiment(){
     }
   };
 
-  // --- 页面状态 ---
+  // --- Page state ---
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [itemIds, setItemIds] = useState([]) // 分配的 image_id 顺序
+  const [itemIds, setItemIds] = useState([]) // Assigned image_id order
   const [images, setImages] = useState([])   // [{id, url, storage_path}]
   const [answers, setAnswers] = useState({}) // id -> {saved, skipped, no_flaw, flaws:[], overall:{selected,byGroup}, confidence, comment}
   const [idx, setIdx] = useState(0)
 
-  // 画布
+  // Canvas
   const containerRef = useRef(null)
   const imgRef = useRef(null)
   const [scale, setScale] = useState(1)
@@ -232,7 +232,7 @@ export default function Experiment(){
   const panStart = useRef({x:0,y:0}); const offsetStart = useRef({x:0,y:0}); const movedRef = useRef(false)
   const [imgRect, setImgRect] = useState(null); const [contRect, setContRect] = useState(null)
 
-  // 圈点草稿 & 弹窗
+  // Draft markers and modals
   const [draftFlaw, setDraftFlaw] = useState(null)
   const [flawModalOpen, setFlawModalOpen] = useState(false)
   const [flawTemp, setFlawTemp] = useState({selected:[], byGroup:{}})
@@ -252,14 +252,14 @@ export default function Experiment(){
   const progress = total ? Math.round((completedCount/total)*100) : 0
   const allDone = total>0 && completedCount===total
 
-  /* ---------------- 加载分配的题目（按批次） ---------------- */
+  /* ---------------- Load assigned items (by batch) ---------------- */
   useEffect(()=>{
     (async()=>{
       try{
         if(!participantId){ navigate('/',{replace:true}); return }
         setLoading(true); setError(null)
 
-        // 1) 拿到该用户该批次的 item_ids（顺序阵列）
+        // 1) Get item_ids for this user/batch (ordered array)
         const { data: ubaRows, error: ubaErr } = await supabase
           .from('user_batch_assignments')
           .select('item_ids')
@@ -274,7 +274,7 @@ export default function Experiment(){
         const ids = uba.item_ids.map(Number)
         setItemIds(ids)
 
-        // 2) 拉取图像元数据（保持 ids 顺序）
+        // 2) Fetch image metadata (keep ids order)
         const { data: imgs, error: imgErr } = await supabase
           .from('images')
           .select('id, storage_path')
@@ -290,7 +290,7 @@ export default function Experiment(){
         });
         setImages(arr);
 
-        // 3) 读取已作答记录（responses）以恢复进度（含 no_flaw / overall / flaws 详情）
+        // 3) Load saved responses to restore progress (no_flaw / overall / flaws)
         const { data: resps, error: rErr } = await supabase
           .from('responses')
           .select('image_id, is_skip, no_flaw, reasons_overall, reasons_flaws')
@@ -312,9 +312,9 @@ export default function Experiment(){
 
         const a = {}
         for(const r of (resps||[])){
-          // 恢复总体理由
+          // Restore overall reasons
           const overallSelected = Array.isArray(r.reasons_overall) ? r.reasons_overall : []
-          // 恢复圈点理由，支持 other_text
+          // Restore marker reasons, including other_text
           const flaws = Array.isArray(r.reasons_flaws)
             ? r.reasons_flaws.map(f => {
                 const sel = Array.isArray(f.reasons) ? f.reasons : []
@@ -342,7 +342,7 @@ export default function Experiment(){
         }
         setAnswers(a)
 
-        // 4) 起始索引：第一个未完成的 id
+        // 4) Starting index: first unfinished id
         let start = 0
         for(let i=0;i<ids.length;i++){ const id=ids[i]; const ans=a[id]; if(!ans?.saved) { start=i; break } }
         setIdx(start)
@@ -353,7 +353,7 @@ export default function Experiment(){
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[batchNo])
 
-  // 度量
+  // Measurement
   useEffect(()=>{
     const measure=()=>{ if(!imgRef.current||!containerRef.current) return; setImgRect(imgRef.current.getBoundingClientRect()); setContRect(containerRef.current.getBoundingClientRect()); }
     measure();
@@ -368,10 +368,10 @@ export default function Experiment(){
       window.removeEventListener('resize', measure);
     }
   },[])
-  // 在缩放/平移/换题后，等布局稳定再重新测量，避免圈点与图像错位
+  // After zoom/pan/switch, re-measure when layout stabilizes to avoid marker drift
   useLayoutEffect(() => {
     if (!imgRef.current || !containerRef.current) return;
-    // 使用 rAF 确保 transform 已应用到布局
+    // Use rAF to ensure transform is applied
     const id = requestAnimationFrame(() => {
       const rectImg = imgRef.current.getBoundingClientRect();
       const rectCont = containerRef.current.getBoundingClientRect();
@@ -380,13 +380,13 @@ export default function Experiment(){
     });
     return () => cancelAnimationFrame(id);
   }, [scale, offset, idx]);
-  useEffect(()=>{ // 切题重置局部状态（不覆盖 noFlaw）
+  useEffect(()=>{ // Reset local state on item change (do not overwrite noFlaw)
     setDraftFlaw(null); setOverallTemp({selected:[],byGroup:{}})
     setStartedAt(Date.now()); setScale(1); setOffset({x:0,y:0})
     setSelectedFlawId(null);
   },[idx])
 
-  // 切题或刷新后，根据已保存记录同步 noFlaw 的勾选状态
+  // Sync noFlaw checkbox after switching items or refresh based on saved answers
   useEffect(()=>{
     const curId = images[idx]?.id
     if(!curId) return
@@ -394,7 +394,7 @@ export default function Experiment(){
     setNoFlaw(!!a?.no_flaw)
   }, [idx, images, answers])
 
-  /* ---------------- 交互：缩放拖拽/圈点 ---------------- */
+  /* ---------------- Interactions: zoom/pan/mark ---------------- */
   // Cursor-anchored zoom
   const zoom = (delta, e) => {
     e.preventDefault();
@@ -432,7 +432,7 @@ export default function Experiment(){
     zoom(delta, e);
   };
 
-  // 鼠标按下：开启拖拽模式 & 记录起点
+  // Mouse down: start panning and record origin
   const onMouseDown = (e) => {
     if (e.button !== 0) return;
     const isImage =
@@ -445,16 +445,16 @@ export default function Experiment(){
     movedRef.current = false;
   }
 
-  // 鼠标移动：若位移超过阈值则判定为拖拽
+  // Mouse move: if moved beyond threshold, treat as pan
   const onMouseMove = (e) => {
     if (!panning) return;
     const dx = e.clientX - panStart.current.x;
     const dy = e.clientY - panStart.current.y;
-    if (Math.hypot(dx, dy) > 3) movedRef.current = true; // 超过 3px 认为在拖拽
+    if (Math.hypot(dx, dy) > 3) movedRef.current = true; // Treat >3px movement as panning
     setOffset({ x: offsetStart.current.x + dx, y: offsetStart.current.y + dy });
   }
 
-  // 鼠标抬起：如果在 panning 且没有实际移动 => 视为“单击”，创建草稿点
+  // Mouse up: if panning with no real movement, treat as click and create draft marker
   const onMouseUp = (e) => {
     if (!panning) return;
 
@@ -465,9 +465,9 @@ export default function Experiment(){
       const px = clamp((x - rect.left) / rect.width, 0, 1);
       const py = clamp((y - rect.top) / rect.height, 0, 1);
 
-      // 生成待确认的蓝圈草稿
+      // Create draft marker to confirm
       setDraftFlaw({ px, py, r: 0.04 });
-      // 取消当前选中圈（避免误解）
+      // Deselect current ring to avoid confusion
       setSelectedFlawId(null);
     }
 
@@ -496,12 +496,12 @@ export default function Experiment(){
     setFlawModalOpen(false)
   }
 
-  // 勾选「无明显破绽」后，清空当前题目的所有总体与细节破绽记录，并同步写入本地 answers[current.id].no_flaw，避免 useEffect 的回填把勾选状态覆盖
+  // When "No obvious flaws" is checked, clear current overall/detail reasons and sync to answers to prevent checkbox reset
   const toggleNoFlaw = (checked) => {
     setNoFlaw(checked);
     if (!current) return;
 
-    // 关闭/取消任何正在进行的圈点与弹窗
+    // Close/cancel any active marker or modal
     if (checked) {
       setDraftFlaw(null);
       setSelectedFlawId(null);
@@ -509,19 +509,19 @@ export default function Experiment(){
       setOverallOpen(false);
     }
 
-    // 同步到本地 answers，防止因依赖 answers 的 useEffect 把勾选状态覆盖回 false
+    // Sync to local answers so dependent useEffect does not flip it back to false
     setAnswers(prev => {
       const cur = prev[current.id] || {};
       const next = { ...cur, no_flaw: checked };
       if (checked) {
-        // 勾选时清空总体与细节理由
+        // Clear overall and detail reasons when checked
         next.overall = { selected: [], byGroup: {} };
         next.flaws = [];
       }
       return { ...prev, [current.id]: next };
     });
   };
-  /* ---------------- 保存/跳过 ---------------- */
+  /* ---------------- Save/skip ---------------- */
   const canSave = useMemo(()=>{
     if(noFlaw) return true
     const cur = answers[current?.id]
@@ -532,7 +532,7 @@ export default function Experiment(){
 
   const handleSave = async()=>{
     if(!current || !participantId) return
-    if(!canSave){ alert('请至少提供一个理由（总体或圈点），或勾选「无明显破绽」。'); return }
+    if(!canSave){ alert('Please provide at least one reason (overall or a marker), or check "No obvious flaws".'); return }
     try{
       const cur = answers[current.id] || {}
       const duration_ms = startedAt ? (Date.now()-startedAt) : null
@@ -553,7 +553,7 @@ export default function Experiment(){
         })),
         duration_ms
       }
-      // 用 UPSERT；若后端没建唯一索引，则 fallback 手动 update/insert
+      // Use UPSERT; fall back to manual update/insert if no unique index exists
       let upsertErr=null
       try{
         const { error } = await supabase
@@ -580,9 +580,9 @@ export default function Experiment(){
           if(insErr) throw insErr
         }
       }
-      // 本地状态 → 找下一题
+      // Local state: move to next item
       setAnswers(prev=>{ const updated={...prev, [current.id]:{ ...(prev[current.id]||{}), saved:true, skipped:false, no_flaw: !!noFlaw }}; const next=findNext(idx, itemIds, updated); if(next!=null) setIdx(next); return updated })
-    }catch(e){ console.error('[save error]',e); alert('保存失败：'+(e?.message||String(e))) }
+    }catch(e){ console.error('[save error]',e); alert('Save failed: '+(e?.message||String(e))) }
   }
   const handleSkip = async()=>{
     if(!current || !participantId) return
@@ -606,17 +606,17 @@ export default function Experiment(){
         }
       }
       setAnswers(prev=>{ const updated={...prev, [current.id]:{ ...(prev[current.id]||{}), saved:false, skipped:true }}; const next=findNext(idx, itemIds, updated, true); if(next!=null) setIdx(next); return updated })
-    }catch(e){ console.error('[skip error]',e); alert('跳过失败：'+(e?.message||String(e))) }
+    }catch(e){ console.error('[skip error]',e); alert('Skip failed: '+(e?.message||String(e))) }
   }
 
   function findNext(curIdx, ids, ans, includeSkipped=false){
-    // 顺着 ids 找第一个未保存的（可忽略或包含 skipped）
+    // Find the first unsaved item in order (optionally include skipped)
     for(let i=curIdx+1;i<ids.length;i++){ const id=ids[i]; const a=ans[id]; if(!a?.saved && (includeSkipped || !a?.skipped)) return i }
     for(let i=0;i<=curIdx;i++){ const id=ids[i]; const a=ans[id]; if(!a?.saved && (includeSkipped || !a?.skipped)) return i }
     return null
   }
 
-  /* ---------------- 渲染 ---------------- */
+  /* ---------------- Render ---------------- */
   return (
     <div style={styles.page}>
       <header style={styles.header}>
@@ -628,7 +628,7 @@ export default function Experiment(){
             type="button"
             onClick={openTips}
             style={{ ...styles.smallBtn, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
-            title="查看操作提示与常见问题（Tips）"
+            title="View tips and FAQs (Tips)"
             aria-label="Open tips"
             data-testid="open-tips-button"
           >
@@ -643,11 +643,11 @@ export default function Experiment(){
       <main style={styles.centerWrap}>
         <section style={styles.card}>
           {loading && <div style={{padding:40, textAlign:'center'}}>Loading…</div>}
-          {error && <div style={errBox}>加载失败：{String(error)}</div>}
+          {error && <div style={errBox}>Load failed: {String(error)}</div>}
 
           {!loading && !error && total===0 && (
             <div style={{padding:40, textAlign:'center', color:'#94a3b8'}}>
-              未找到此批次的分配。请返回菜单。
+              No assignment found for this batch. Please return to the menu.
             </div>
           )}
 
@@ -659,7 +659,7 @@ export default function Experiment(){
                 <button style={styles.navBtn} disabled={idx===total-1} onClick={()=>setIdx(i=>Math.min(total-1,i+1))}>Next ▶</button>
               </div>
 
-              {/* 左：查看器 */}
+              {/* Left: viewer */}
               <div style={viewer.wrap}>
                 <div
                   ref={containerRef}
@@ -722,10 +722,10 @@ export default function Experiment(){
                     />
                   )}
 
-                  {/* 提示仍在容器内，但与工具条无重叠 */}
-                  <div style={viewer.hint}>滚轮缩放，拖拽平移；单击添加圈点 → 确认位置后选择理由</div>
+                  {/* Hint stays in container without overlapping toolbar */}
+                  <div style={viewer.hint}>Scroll to zoom, drag to pan; click to add a marker, confirm position, then choose reasons</div>
                 </div>
-                {/* 工具条移到容器下方左侧，横向排列，不遮挡图片 */}
+                {/* Toolbar moved below container, left aligned, horizontal, no overlap */}
                 <div style={viewer.toolbarRow}>
                   <button aria-label="Zoom in" style={viewer.fab} onClick={()=>setScale(s=>clamp(s+0.15,0.5,5))}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -746,18 +746,18 @@ export default function Experiment(){
                 </div>
               </div>
 
-              {/* 右：表单面板 */}
+              {/* Right: form panel */}
               <div style={panel.panel}>
-                {/* 顶部固定：无明显破绽 */}
+                {/* Top: no obvious flaws */}
                 <div style={panel.stickyTop}>
                   <label style={{display:'flex', alignItems:'center', gap:8}}>
-                    <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> 无明显破绽（允许 0 点 0 理由）
+                    <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> No obvious flaws (0 points, 0 reasons allowed)
                   </label>
                 </div>
 
-                {/* Overall 条目（按是否已有记录切换 Add / Edit+Clear） */}
+                {/* Overall section (switch Add vs Edit+Clear based on existing data) */}
                 <div style={panel.row}>
-                  <div style={panel.head}>总体理由</div>
+                  <div style={panel.head}>Overall reasons</div>
                   <div style={{display:'flex', gap:8}}>
                     {(() => {
                       const curOverall = answers[current.id]?.overall || { selected:[], byGroup:{} }
@@ -794,9 +794,9 @@ export default function Experiment(){
                     })()}
                   </div>
                 </div>
-                <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} 项</div>
+                <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} items</div>
 
-                {/* Flaws 列表 */}
+                {/* Flaws list */}
                 {(answers[current.id]?.flaws||[]).map((f,i)=> (
                   <div key={f.id} style={panel.item}>
                     <div style={{fontWeight:700}}>Flaw #{i+1}</div>
@@ -808,10 +808,10 @@ export default function Experiment(){
                   </div>
                 ))}
 
-                {/* Draft 提示 */}
+                {/* Draft notice */}
                 {draftFlaw && (
                   <div style={{...panel.item, borderStyle:'dashed'}}>
-                    <div>点击位置待确认</div>
+                    <div>Click position pending confirmation</div>
                     <div style={{display:'flex', gap:8}}>
                       <button style={styles.smallBtn} onClick={confirmDraftPosition}>Confirm</button>
                       <button style={styles.smallBtn} onClick={()=>{ setDraftFlaw(null) }}>Cancel</button>
@@ -819,10 +819,10 @@ export default function Experiment(){
                   </div>
                 )}
 
-                {/* 新增：底部按钮前的 spacer */}
+                {/* Spacer before bottom actions */}
                 <div style={{flex:1}} />
 
-                {/* 底部固定：操作按钮 */}
+                {/* Bottom actions */}
                 <div style={panel.stickyBottom}>
                   <button style={styles.secondaryBtn} onClick={handleSkip}>Skip</button>
                   <button style={{...styles.primaryBtn, opacity:canSave?1:.5}} disabled={!canSave} onClick={handleSave}>Save & Next</button>
@@ -833,12 +833,12 @@ export default function Experiment(){
         </section>
       </main>
 
-      {/* Overall 弹窗 */}
+      {/* Overall modal */}
       {overallOpen && current && (
         <OverallModal temp={overallTemp} setTemp={setOverallTemp} onClose={()=>setOverallOpen(false)} onConfirm={()=>{ setAnswers(prev=>({ ...prev, [current.id]:{ ...(prev[current.id]||{}), overall: deepClone(overallTemp) } })); setOverallOpen(false) }} />
       )}
 
-      {/* Flaw 弹窗 */}
+      {/* Flaw modal */}
       {flawModalOpen && current && (
         <FlawReasonsModal temp={flawTemp} setTemp={setFlawTemp} onClose={()=>setFlawModalOpen(false)} onConfirm={commitFlaw} />
       )}
@@ -856,8 +856,8 @@ export default function Experiment(){
   )
 }
 
-/* ---------------- 小组件 ---------------- */
-// 可拖动弹窗的通用逻辑（与 Practice 页面保持一致）
+/* ---------------- Small components ---------------- */
+// Reusable draggable modal logic (kept in sync with Practice page)
 function useDraggableModal() {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef({ dragging: false, lastX: 0, lastY: 0 });
@@ -891,7 +891,7 @@ function useDraggableModal() {
 
   const handleDragMouseDown = (e) => {
     const target = e.target;
-    // 如果点击的是交互元素（复选框、按钮、文字输入等），则不要触发拖动
+    // If clicking on an interactive element (checkbox, button, input, etc.), do not start drag
     if (
       target &&
       typeof target.closest === 'function' &&
@@ -932,7 +932,7 @@ function OverallModal({ temp, setTemp, onClose, onConfirm }) {
         onClick={e => e.stopPropagation()}
         onMouseDown={handleDragMouseDown}
       >
-        <div style={modal.title}>Overall Reasons（多选）</div>
+        <div style={modal.title}>Overall Reasons (multiple select)</div>
         <div style={{ maxHeight: '60vh', overflow: 'auto', paddingRight: 6 }}>
           {OVERALL_GROUPS.map(g => (
             <div key={g.key} style={{ marginBottom: 12 }}>
@@ -967,7 +967,7 @@ function OverallModal({ temp, setTemp, onClose, onConfirm }) {
                       </div>
                       {it.example && (
                         <div style={{ fontSize: 12, marginTop: 2, color: '#cbd5e1', width: '100%' }}>
-                          （{it.example}）
+                          ({it.example})
                         </div>
                       )}
                     </label>
@@ -1027,7 +1027,7 @@ function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
         onClick={e=>e.stopPropagation()}
         onMouseDown={handleDragMouseDown}
       >
-        <div style={modal.title}>Flaw Reasons（多选）</div>
+        <div style={modal.title}>Flaw Reasons (multiple select)</div>
         <div style={{maxHeight:'60vh',overflow:'auto',paddingRight:6}}>
           {FLAW_GROUPS.map(g=> {
             const open = openGroups[g.key]
@@ -1084,13 +1084,13 @@ function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
                           </div>
                           {it.example && (
                             <div style={{ fontSize: 12, marginTop: 2, color: '#cbd5e1', width: '100%' }}>
-                              （{it.example}）
+                              ({it.example})
                             </div>
                           )}
                           {it.hasTextInput && active && (
                             <textarea
                               rows={3}
-                              placeholder="请简要说明其他问题…"
+                              placeholder="Please briefly describe the other issue..."
                               value={otherText}
                               onChange={e =>
                                 setTemp(prev => ({
@@ -1129,7 +1129,7 @@ function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
   )
 }
 
-/* ---------------- 样式 ---------------- */
+/* ---------------- Styles ---------------- */
 const HIGHLIGHT_YELLOW = '#fff200'; // Bright Word-like yellow
 const HIGHLIGHT_YELLOW_FILL = 'rgba(255, 242, 0, 0.6)'; // stronger fill for draft
 const HIGHLIGHT_YELLOW_FILL_SOFT = 'rgba(255, 242, 0, 0.4)'; // softer fill for saved rings
@@ -1198,7 +1198,7 @@ function ReviewModal({ itemIds, answers, currentIndex, onJump, onClose }) {
     const id = itemIds[i]
     const a = answers[id]
     if (a?.saved && !a?.skipped) return 'done'
-    return 'todo' // 未完成或被跳过
+    return 'todo' // Unfinished or skipped
   }
   const colorFor = (s) => s==='done' ? '#22c55e' : s==='current' ? '#f59e0b' : '#ef4444'
   const boxStyle = (s) => ({

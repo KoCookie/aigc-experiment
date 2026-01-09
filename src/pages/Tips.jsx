@@ -41,64 +41,64 @@ export default function Tips() {
 
       <main style={styles.centerWrap}>
         <section style={styles.card}>
-          <h1 style={styles.h1}>提示与帮助（Tips）</h1>
+          <h1 style={styles.h1}>Tips &amp; Help</h1>
 
-          <h2 style={styles.h2}>实验整体流程概览</h2>
+          <h2 style={styles.h2}>Overview of the Study Flow</h2>
           <p style={styles.p}>
-            在阅读完说明后，您会进入 Practice 阶段，我们将提供 11 道练习题帮助您熟悉实验流程。
-            Practice 只需完成一次，之后再次登录将直接进入 Menu 页面。
+            After reading the instructions, you will enter the Practice stage with 11 practice items to help you get familiar with the workflow.
+            Practice only needs to be completed once. After that, future logins will go directly to the Menu page.
           </p>
           <p style={styles.p}>
-            在 Menu 页面您可以看到 4 个批次的进度（Batch1–Batch4），可以自由选择继续未完成的批次。
-            每次回到未完成的批次时，系统会从最新的进度继续。
+            On the Menu page you can see progress for four batches (Batch 1–4) and freely resume any unfinished batch.
+            Each time you return, the system continues from your latest progress.
           </p>
           <p style={styles.p}>
-            进入批次后，您将正式开始实验。在完成或退出某个批次后，您将进入 Result 页面查看整体进度。
-          </p>
-
-          <h2 style={styles.h2}>有关于理由选项的说明</h2>
-          <p style={styles.p}>面部问题：不仅限于人，也可能是动物、乐高积木人等具有“脸部”的对象。</p>
-          <p style={styles.p}>毛发问题：可以指人的头发、动物毛发、衣物纤维（如毛衣、围巾）。</p>
-          <p style={styles.p}>手部问题：仅指人的手；动物的手足属于身体问题；类似“手”的玩具形状（如积木人）属于物体问题。</p>
-          <p style={styles.p}>身体问题：人、动物、积木人的身体/躯干/肢干结构问题。</p>
-          <p style={styles.p}>物体问题：范围较广，包括食物、积木、绘画、生活用品等。</p>
-          <p style={styles.p}>其他问题：最通用的选项，可覆盖所有无法归类的问题，也可用文字补充。</p>
-
-          <h2 style={styles.h2}>在反馈理由时您可能遇到的情况</h2>
-          <p style={styles.p}>1. 图片整体存在不自然之处（如色调奇怪、CG 感强），但细节无明显错误 → 可只选整体理由。</p>
-          <p style={styles.p}>2. 图片整体良好，但局部存在破绽（人体结构、物体位置等） → 可只选细节理由。</p>
-          <p style={styles.p}>3. 整体与细节都存在破绽 → 需同时反馈整体与细节理由。</p>
-          <p style={styles.p}>
-            4. 图片质量极差（如整体油画感、人脸大量结构异常、手部融合成团等） → 无需反馈细节，可只选整体理由。
-          </p>
-          <p style={styles.p}>
-            请尽量通过点击反馈尽可能详细的破绽；当破绽太多无法逐一点击时，可“放弃”该图，仅反馈整体理由。
-          </p>
-          <p style={styles.p}><strong>请相信自己的判断，没有标准答案，我们需要的就是您的主观感受。</strong></p>
-
-          <h2 style={styles.h2}>Practice 阶段目标</h2>
-          <p style={styles.p}>1. 熟悉实验流程与页面操作。</p>
-          <p style={styles.p}>2. 熟悉各项理由选项的含义与适用情况。</p>
-          <p style={styles.p}>3. 体会哪些图片可以“放弃”。</p>
-          <p style={styles.p}>
-            Practice 的参考答案并不是“标准答案”，它只是帮助您理解正式实验中反馈的颗粒度。您的判断永远是正确的。
+            Once you enter a batch, the experiment begins. After finishing or exiting a batch, you will be taken to the Result page to review your overall progress.
           </p>
 
-          <h2 style={styles.h2}>关于点击图片的特别说明</h2>
+          <h2 style={styles.h2}>Notes on Reason Options</h2>
+          <p style={styles.p}>Face issues: not limited to humans; can also apply to animals, LEGO figures, or any object with a "face."</p>
+          <p style={styles.p}>Hair/fur issues: includes human hair, animal fur, and clothing fibers (e.g., sweaters or scarves).</p>
+          <p style={styles.p}>Hand issues: human hands only; animal paws belong to body issues; hand-like toy shapes (e.g., LEGO hands) are object issues.</p>
+          <p style={styles.p}>Body issues: structural problems of bodies/torso/limbs in humans, animals, or toy figures.</p>
+          <p style={styles.p}>Object issues: a broad category, including food, blocks, paintings, and everyday items.</p>
+          <p style={styles.p}>Other issues: the most general option; covers anything not classified above and supports text notes.</p>
+
+          <h2 style={styles.h2}>Cases You May Encounter</h2>
+          <p style={styles.p}>1. Overall issues (e.g., strange tone, strong CG feel) but no obvious detail errors → choose overall reasons only.</p>
+          <p style={styles.p}>2. Good overall, but local flaws (body structure, object position, etc.) → choose detail reasons only.</p>
+          <p style={styles.p}>3. Both overall and detail flaws → provide both overall and detail reasons.</p>
           <p style={styles.p}>
-            点击代表您的注视。若一次点击无法覆盖整个破绽（如整根手指、马匹整个下半身），无需多次点击，确保一次点击落在该区域即可。
+            4. Very poor image quality (e.g., painterly look, many faces structurally broken, hands merged) → no need to mark details; choose overall reasons only.
           </p>
           <p style={styles.p}>
-            若一个圆圈覆盖多个破绽（例如两只眼睛同时被圈住），请分别点击每一处破绽，因为只有圆圈中心的位置才是有效反馈。
+            Try to mark flaws as precisely as possible with clicks. If there are too many flaws to mark individually, you may "skip" detail marking and provide only overall reasons.
           </p>
+          <p style={styles.p}><strong>Trust your judgment. There are no correct answers. We want your subjective impressions.</strong></p>
+
+          <h2 style={styles.h2}>Practice Stage Goals</h2>
+          <p style={styles.p}>1. Get familiar with the workflow and interface.</p>
+          <p style={styles.p}>2. Learn the meaning and usage of each reason option.</p>
+          <p style={styles.p}>3. Understand which images can be "skipped" for detail marking.</p>
           <p style={styles.p}>
-            当您放大或缩小图片后，圆圈的位置可能出现“飘移”，请使用 Reset 按钮恢复准确位置。
+            The Practice reference answers are not "correct answers." They simply illustrate the expected level of detail. Your judgment is always valid.
           </p>
 
-          <h2 style={styles.h2}>提醒</h2>
+          <h2 style={styles.h2}>Notes on Clicking the Image</h2>
           <p style={styles.p}>
-            如果在实验过程中忘记任何内容，都可以随时点击右上角的 Tips 查看本说明。
-            请根据您的真实主观感受进行反馈即可。
+            A click represents where you looked. If one click cannot cover the entire flaw (e.g., a whole finger or a horse's lower body), do not click repeatedly; one click in the area is enough.
+          </p>
+          <p style={styles.p}>
+            If one circle visually covers multiple flaws (e.g., both eyes), click each flawed area separately. Only the circle center counts as valid feedback.
+          </p>
+          <p style={styles.p}>
+            When zooming in or out, circles may appear to drift. Use the Reset button to restore accurate positioning.
+          </p>
+
+          <h2 style={styles.h2}>Reminder</h2>
+          <p style={styles.p}>
+            If you forget anything during the experiment, you can always click Tips in the top-right to review this guidance.
+            Please provide feedback based on your genuine impressions.
           </p>
         </section>
       </main>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import supabase from '../supabaseClient'
 
-// 用于生成“乱且固定”的全局随机顺序（所有参与者一致）
+// Generate a shuffled but fixed global order (consistent across participants)
 const hashStringToSeed = (str) => {
   let h = 0
   for (let i = 0; i < str.length; i++) {
@@ -123,9 +123,9 @@ export default function Menu() {
           .order('batch_no', { ascending: true });
         if (aErr) throw aErr;
 
-        // If this user has no batch assignments yet, create a “乱且固定”的 4-batch 分配
+        // If this user has no batch assignments yet, create a shuffled but fixed 4-batch assignment
         if (!assigns || !assigns.length) {
-          // 1）取出所有正式实验图片（不包含 practice / pilot）
+          // 1) Fetch all main experiment images (exclude practice / pilot)
           const { data: imgRows, error: imgErr } = await supabase
             .from('images')
             .select('id')
@@ -137,25 +137,25 @@ export default function Menu() {
             throw new Error('No experiment images found for batch assignment');
           }
 
-          // 2）按 id 排序，保证基础顺序稳定
+          // 2) Sort by id to keep a stable base order
           const baseIds = imgRows
             .map(r => Number(r.id))
             .sort((a, b) => a - b);
 
-          // 3）使用“按用户固定”的伪随机数，对所有 image_id 做一次洗牌
-          //    —— 不同参与者使用不同的种子，因此每个人的顺序都不一样，
-          //    —— 同一个参与者多次进入时顺序保持稳定
+          // 3) Use a per-user fixed PRNG to shuffle all image_ids
+          //    - Different participants use different seeds, so each user gets a unique order
+          //    - The same participant gets a stable order across sessions
           const seedStr = `experiment-per-user-seed-2025-12-08-${userId}`;
           const seed = hashStringToSeed(seedStr);
           const rng = mulberry32(seed);
-          // 使用 Fisher–Yates 洗牌算法生成 per-user 随机顺序
+          // Use Fisher-Yates shuffle to generate per-user order
           const shuffled = [...baseIds];
           for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
           }
 
-          // 4）将洗牌后的列表平均切成 4 个 batch（顺序固定）
+          // 4) Split the shuffled list evenly into 4 batches (fixed order)
           const BATCH_COUNT = 4;
           const perBatch = Math.ceil(shuffled.length / BATCH_COUNT);
           const payloads = [];
@@ -188,7 +188,7 @@ export default function Menu() {
             }
           }
 
-          // 更新 assigns，后续逻辑统一使用
+          // Update assigns for downstream logic
           assigns = payloads;
         }
 

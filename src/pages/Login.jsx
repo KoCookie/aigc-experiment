@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import supabase from '../supabaseClient'
 
-// 简单的前端哈希函数（SHA-256），用于生成 password_hash
+// Simple client-side hash function (SHA-256) to generate password_hash
 async function hashPassword(password) {
   const enc = new TextEncoder()
   const data = enc.encode(password)
@@ -13,11 +13,11 @@ async function hashPassword(password) {
 
 /**
  * Login / Sign-up page
- * - 支持创建新账号（Sign up）与已有账号登录（Log in）
- * - 每个账号需要设置密码；密码哈希存入 participants.password_hash
+ * - Supports creating a new account (sign up) and logging in with an existing account
+ * - Each account requires a password; password hash is stored in participants.password_hash
  *
- * ⚠ 安全提示：这只是一个科研实验用的简易账号系统，
- *   不适合作为真正的生产级用户认证方案。
+ * ⚠ Security note: this is a lightweight account system for research only,
+ *   not suitable for production-grade authentication.
  */
 export default function Login() {
   const navigate = useNavigate()
@@ -26,7 +26,7 @@ export default function Login() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [cohort, setCohort] = useState('main')   // 批次名，可自定义
+  const [cohort, setCohort] = useState('main')   // Batch name, customizable
   const [loading, setLoading] = useState(false)
   const [errMsg, setErrMsg] = useState('')
 
@@ -42,19 +42,19 @@ export default function Login() {
     const cleanPassword = password.trim()
 
     if (!cleanEmail || !cleanPassword || (isSignup && !cleanName)) {
-      setErrMsg(isSignup ? '请填写姓名、邮箱和密码' : '请填写邮箱和密码')
+      setErrMsg(isSignup ? 'Please enter name, email, and password' : 'Please enter email and password')
       return
     }
 
-    // 密码格式校验：方案 B
-    // 要求：至少 8 位，且同时包含字母和数字
+    // Password format check (Scheme B)
+    // Requirement: at least 8 characters, includes both letters and numbers
     const pwd = cleanPassword
     if (
       pwd.length < 8 ||
       !/[A-Za-z]/.test(pwd) ||
       !/[0-9]/.test(pwd)
     ) {
-      setErrMsg('密码至少 8 位，并包含字母和数字')
+      setErrMsg('Password must be at least 8 characters and include letters and numbers')
       return
     }
 
@@ -63,8 +63,8 @@ export default function Login() {
 
     try {
       if (isSignup) {
-        // ---------- 注册逻辑 ----------
-        // 1) 检查 email 是否已存在
+        // ---------- Sign-up flow ----------
+        // 1) Check if email already exists
         const { data: existing, error: queryErr } = await supabase
           .from('participants')
           .select('id')
@@ -73,11 +73,11 @@ export default function Login() {
 
         if (queryErr) throw queryErr
         if (existing) {
-          setErrMsg('该邮箱已注册，请直接登录或更换邮箱')
+          setErrMsg('This email is already registered. Please log in or use a different email.')
           return
         }
 
-        // 2) 生成密码哈希并插入新用户
+        // 2) Generate password hash and insert new user
         const passwordHash = await hashPassword(cleanPassword)
 
         const { data: inserted, error: insertErr } = await supabase
@@ -93,9 +93,9 @@ export default function Login() {
 
         if (insertErr) throw insertErr
         const pid = inserted?.id
-        if (!pid) throw new Error('创建参与者失败')
+        if (!pid) throw new Error('Failed to create participant')
 
-        // 3) 本地缓存 + 跳转 Intro（新用户）
+        // 3) Cache locally + go to Intro (new user)
         localStorage.setItem('participant_id', String(pid))
         localStorage.setItem('participant_name', cleanName)
         localStorage.setItem('participant_email', cleanEmail)
@@ -104,8 +104,8 @@ export default function Login() {
         console.log('[Login] sign up success, navigate to /intro', { pid })
         navigate('/intro', { replace: true })
       } else {
-        // ---------- 登录逻辑 ----------
-        // 1) 根据 email 查找该邮箱下的所有账号记录（可能属于不同 cohort）
+        // ---------- Log-in flow ----------
+        // 1) Find all accounts under this email (may belong to different cohorts)
         const { data: rows, error: queryErr } = await supabase
           .from('participants')
           .select('id, name, password_hash, cohort, practice_passed')
@@ -113,35 +113,35 @@ export default function Login() {
 
         if (queryErr) throw queryErr
         if (!rows || rows.length === 0) {
-          setErrMsg('未找到该邮箱的账号，请先创建账号')
+          setErrMsg('No account found for this email. Please create an account first.')
           return
         }
 
-        // 2) 使用第一条记录作为“基准账号”，用于密码校验与默认姓名
+        // 2) Use the first record as the "base account" for password check and default name
         const base = rows[0]
 
         if (!base.password_hash) {
-          setErrMsg('该账号尚未设置密码，请联系实验组织者')
+          setErrMsg('This account has no password set. Please contact the study coordinator.')
           return
         }
 
         const hash = await hashPassword(cleanPassword)
         if (hash !== base.password_hash) {
-          setErrMsg('密码错误，请重试')
+          setErrMsg('Incorrect password. Please try again.')
           return
         }
 
-        // 3) 确定本次登录的目标 cohort：
-        //    - 如果用户在表单中填写了 cohort，则以该值为准；
-        //    - 否则退回到已有记录中的 cohort 或 'test'
+        // 3) Determine target cohort for this login:
+        //    - If user provided cohort in the form, use it;
+        //    - Otherwise fall back to existing cohort or 'test'
         const targetCohort = (cleanCohort || base.cohort || 'test').trim()
 
-        // 4) 在已有记录中查找是否已经存在相同 (email, cohort) 组合
+        // 4) Check for an existing (email, cohort) record
         let participant = rows.find(
           (row) => (row.cohort || '').trim() === targetCohort
         )
 
-        // 5) 可选：如果用户在登录时提供了新姓名，则更新该邮箱下所有记录的姓名
+        // 5) Optional: if user provides a new name at login, update name for all records under this email
         const existingName = (base.name || '').trim()
         const finalName = (cleanName || existingName || '').trim()
 
@@ -152,7 +152,7 @@ export default function Login() {
             .eq('email', cleanEmail)
         }
 
-        // 6) 如果不存在该 cohort 对应的 participants 记录，则为该 (email, cohort) 创建一条新记录
+        // 6) If no participants record exists for this cohort, create a new (email, cohort) record
         if (!participant) {
           const { data: inserted, error: insertErr } = await supabase
             .from('participants')
@@ -170,36 +170,36 @@ export default function Login() {
         }
 
         if (!participant) {
-          throw new Error('登录失败：未能获取参与者信息')
+          throw new Error('Login failed: could not retrieve participant info')
         }
 
-        // 7) 本地缓存当前 cohort 对应的 participant 信息
+        // 7) Cache participant info for the current cohort
         localStorage.setItem('participant_id', String(participant.id))
         localStorage.setItem('participant_name', finalName)
         localStorage.setItem('participant_email', cleanEmail)
         localStorage.setItem('participant_cohort', targetCohort)
 
-        // 8) 根据该 cohort 下的 practice_passed 决定跳转逻辑
+        // 8) Decide navigation based on practice_passed for this cohort
         const practicePassed = !!participant.practice_passed
 
         if (practicePassed) {
-          // 已完成所有练习题
+          // Practice completed
           if (targetCohort === 'pilot') {
-            // pilot 批次：直接进入 Pilot 预实验页面（会自动恢复未完成题目）
+            // Pilot cohort: go directly to the Pilot pre-study page (auto-resumes unfinished items)
             navigate('/pilot', { replace: true })
           } else {
-            // 其他批次：进入正式实验菜单
+            // Other cohorts: go to main menu
             navigate('/menu', { replace: true })
           }
         } else {
-          // 未完成练习题：先从 Introduction 开始
+          // Practice not completed: start from Introduction
           navigate('/intro', { replace: true })
         }
         return // prevent falling through
       }
     } catch (err) {
       console.error(err)
-      setErrMsg(err.message || '操作失败，请稍后再试')
+      setErrMsg(err.message || 'Operation failed. Please try again later.')
     } finally {
       setLoading(false)
     }
@@ -221,7 +221,7 @@ export default function Login() {
         </p>
 
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
-          {/* 姓名：仅在注册时必填，但登录时也允许填写（用于更新显示名） */}
+          {/* Name: required for sign-up, optional for login (to update display name) */}
           <input
             style={styles.input}
             type="text"
