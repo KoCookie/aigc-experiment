@@ -1,4 +1,4 @@
-// src/pages/Experiment.jsx (rev: batch-flow, single-button, flaws-only)
+// src/pages/Experiment.jsx (rev: batch-flow, single-button, defects-only)
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import supabase from '../supabaseClient'
@@ -534,7 +534,7 @@ export default function Practice(){
     setFlawModalOpen(false)
   }
 
-  // When "No obvious flaws" is checked, clear current overall/detail reasons and sync to answers to prevent checkbox reset
+  // When "No obvious defects" is checked, clear current overall/detail reasons and sync to answers to prevent checkbox reset
   const toggleNoFlaw = (checked) => {
     setNoFlaw(checked);
     if (!current) return;
@@ -570,7 +570,7 @@ export default function Practice(){
 
   const handleSave = async()=>{
     if(!current || !participantId) return
-    if(!canSave){ alert('Please provide at least one reason (overall or a marker), or check "No obvious flaws".'); return }
+    if(!canSave){ alert('Please provide at least one reason (overall or a marker), or check "No obvious defects".'); return }
     try{
       const cur = answers[current.id] || {}
       const duration_ms = startedAt ? (Date.now()-startedAt) : null
@@ -811,7 +811,7 @@ export default function Practice(){
                           color: '#ffffff',
                         }
                         return (
-                          <div key={f.id || i} style={style} title={`gold-flaw-${i + 1}`}>
+                          <div key={f.id || i} style={style} title={`gold-defect-${i + 1}`}>
                             {i + 1}
                           </div>
                         )
@@ -837,7 +837,7 @@ export default function Practice(){
                           color: '#ffffff',
                         }
                         return (
-                          <div key={f.id || i} style={style} title={`my-flaw-${i + 1}`}>
+                          <div key={f.id || i} style={style} title={`my-defect-${i + 1}`}>
                             {i + 1}
                           </div>
                         )
@@ -854,7 +854,7 @@ export default function Practice(){
                         isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
                         isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
                       )
-                      return <div key={f.id} style={style} title="flaw" />
+                      return <div key={f.id} style={style} title="defect" />
                     })
                   })()}
                   {viewMode === 'answer' && draftFlaw && (
@@ -914,10 +914,10 @@ export default function Practice(){
               <div style={panel.panel}>
                 {viewMode === 'answer' && (
                   <>
-                    {/* Top: no obvious flaws */}
+                    {/* Top: no obvious defects */}
                     <div style={panel.stickyTop}>
                       <label style={{display:'flex', alignItems:'center', gap:8}}>
-                        <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> No obvious flaws (0 points, 0 reasons allowed)
+                        <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> No obvious defects (0 points, 0 reasons allowed)
                       </label>
                     </div>
 
@@ -962,10 +962,10 @@ export default function Practice(){
                     </div>
                     <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} items</div>
 
-                    {/* Flaws list */}
+                    {/* Defects list */}
                     {(answers[current.id]?.flaws||[]).map((f,i)=> (
                       <div key={f.id} style={panel.item}>
-                        <div style={{fontWeight:700}}>Flaw #{i+1}</div>
+                        <div style={{fontWeight:700}}>Defect #{i+1}</div>
                         <div style={{display:'flex', gap:8}}>
                           <button style={styles.smallBtn} onClick={()=> setSelectedFlawId(f.id)}>{selectedFlawId===f.id? 'Selected' : 'Select'}</button>
                           <button style={styles.smallBtn} onClick={()=>{ setFlawTemp(deepClone(f.reasons||{selected:[],byGroup:{}})); setDraftFlaw({px:f.px,py:f.py,r:f.r, fromId:f.id}); setFlawModalOpen(true) }}>Edit</button>
@@ -1009,9 +1009,9 @@ export default function Practice(){
                           )}
                         </ul>
 
-                        <div style={{fontWeight:700, margin:'10px 0 4px'}}>Detail flaws:</div>
+                        <div style={{fontWeight:700, margin:'10px 0 4px'}}>Detail defects:</div>
                         {(goldAnswers[current.id].flaws || []).length === 0 && (
-                          <div style={panel.note}>(No detail flaws)</div>
+                          <div style={panel.note}>(No detail defects)</div>
                         )}
                         {(goldAnswers[current.id].flaws || []).map((f,i) => (
                           <div key={f.id || i} style={{marginBottom:6, padding:'6px 8px', borderRadius:6, border:'1px solid #334155'}}>
@@ -1054,13 +1054,13 @@ export default function Practice(){
                           <li>(No overall reasons selected)</li>
                         )}
                       </ul>
-                      <div style={{fontWeight:700, margin:'10px 0 4px'}}>Detail flaws:</div>
+                      <div style={{fontWeight:700, margin:'10px 0 4px'}}>Detail defects:</div>
                       {(answers[current.id]?.flaws || []).length === 0 && (
-                        <div style={panel.note}>(No detail flaws marked)</div>
+                        <div style={panel.note}>(No detail defects marked)</div>
                       )}
                       {(answers[current.id]?.flaws || []).map((f,i) => (
                         <div key={f.id || i} style={{marginBottom:6, padding:'6px 8px', borderRadius:6, border:'1px solid #334155'}}>
-                          <div style={{fontWeight:600, marginBottom:2}}>Flaw #{i+1}</div>
+                          <div style={{fontWeight:600, marginBottom:2}}>Defect #{i+1}</div>
                           <ul style={{margin:0, paddingLeft:18}}>
                             {(f.reasons?.selected || []).map(code => (
                               <li key={code}>{labelForFlaw(code) || code}</li>
@@ -1090,7 +1090,7 @@ export default function Practice(){
         <OverallModal temp={overallTemp} setTemp={setOverallTemp} onClose={()=>setOverallOpen(false)} onConfirm={()=>{ setAnswers(prev=>({ ...prev, [current.id]:{ ...(prev[current.id]||{}), overall: deepClone(overallTemp) } })); setOverallOpen(false) }} />
       )}
 
-      {/* Flaw modal */}
+      {/* Defect modal */}
       {flawModalOpen && current && (
         <FlawReasonsModal temp={flawTemp} setTemp={setFlawTemp} onClose={()=>setFlawModalOpen(false)} onConfirm={commitFlaw} />
       )}
@@ -1306,7 +1306,7 @@ function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
         onMouseDown={handleDragMouseDown}
       >
         <div style={modal.title}>
-          Flaw Reasons (multiple select)
+          Defect Reasons (multiple select)
         </div>
         <div style={{maxHeight:'60vh',overflow:'auto',paddingRight:6}}>
           {FLAW_GROUPS.map(g=> {

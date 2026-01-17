@@ -1,4 +1,4 @@
-// src/pages/Experiment.jsx (rev: batch-flow, single-button, flaws-only)
+// src/pages/Experiment.jsx (rev: batch-flow, single-button, defects-only)
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import supabase from '../supabaseClient'
@@ -290,7 +290,7 @@ export default function Experiment(){
         });
         setImages(arr);
 
-        // 3) Load saved responses to restore progress (no_flaw / overall / flaws)
+        // 3) Load saved responses to restore progress (no_flaw / overall / defects)
         const { data: resps, error: rErr } = await supabase
           .from('responses')
           .select('image_id, is_skip, no_flaw, reasons_overall, reasons_flaws')
@@ -496,7 +496,7 @@ export default function Experiment(){
     setFlawModalOpen(false)
   }
 
-  // When "No obvious flaws" is checked, clear current overall/detail reasons and sync to answers to prevent checkbox reset
+  // When "No obvious defects" is checked, clear current overall/detail reasons and sync to answers to prevent checkbox reset
   const toggleNoFlaw = (checked) => {
     setNoFlaw(checked);
     if (!current) return;
@@ -532,7 +532,7 @@ export default function Experiment(){
 
   const handleSave = async()=>{
     if(!current || !participantId) return
-    if(!canSave){ alert('Please provide at least one reason (overall or a marker), or check "No obvious flaws".'); return }
+    if(!canSave){ alert('Please provide at least one reason (overall or a marker), or check "No obvious defects".'); return }
     try{
       const cur = answers[current.id] || {}
       const duration_ms = startedAt ? (Date.now()-startedAt) : null
@@ -708,7 +708,7 @@ export default function Experiment(){
                       isSel ? HIGHLIGHT_RED : HIGHLIGHT_YELLOW,
                       isSel ? HIGHLIGHT_RED_FILL : HIGHLIGHT_YELLOW_FILL_SOFT
                     );
-                    return <div key={f.id} style={style} title="flaw" />;
+                    return <div key={f.id} style={style} title="defect" />;
                   })}
                   {draftFlaw && (
                     <div
@@ -748,10 +748,10 @@ export default function Experiment(){
 
               {/* Right: form panel */}
               <div style={panel.panel}>
-                {/* Top: no obvious flaws */}
+                {/* Top: no obvious defects */}
                 <div style={panel.stickyTop}>
                   <label style={{display:'flex', alignItems:'center', gap:8}}>
-                    <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> No obvious flaws (0 points, 0 reasons allowed)
+                    <input type="checkbox" checked={noFlaw} onChange={e=>toggleNoFlaw(e.target.checked)} /> No obvious defects
                   </label>
                 </div>
 
@@ -796,10 +796,10 @@ export default function Experiment(){
                 </div>
                 <div style={panel.note}>{(answers[current.id]?.overall?.selected?.length||0)} items</div>
 
-                {/* Flaws list */}
+                {/* Defects list */}
                 {(answers[current.id]?.flaws||[]).map((f,i)=> (
                   <div key={f.id} style={panel.item}>
-                    <div style={{fontWeight:700}}>Flaw #{i+1}</div>
+                    <div style={{fontWeight:700}}>Defect #{i+1}</div>
                     <div style={{display:'flex', gap:8}}>
                       <button style={styles.smallBtn} onClick={()=> setSelectedFlawId(f.id)}>{selectedFlawId===f.id? 'Selected' : 'Select'}</button>
                       <button style={styles.smallBtn} onClick={()=>{ setFlawTemp(deepClone(f.reasons||{selected:[],byGroup:{}})); setDraftFlaw({px:f.px,py:f.py,r:f.r, fromId:f.id}); setFlawModalOpen(true) }}>Edit</button>
@@ -838,7 +838,7 @@ export default function Experiment(){
         <OverallModal temp={overallTemp} setTemp={setOverallTemp} onClose={()=>setOverallOpen(false)} onConfirm={()=>{ setAnswers(prev=>({ ...prev, [current.id]:{ ...(prev[current.id]||{}), overall: deepClone(overallTemp) } })); setOverallOpen(false) }} />
       )}
 
-      {/* Flaw modal */}
+      {/* Defect modal */}
       {flawModalOpen && current && (
         <FlawReasonsModal temp={flawTemp} setTemp={setFlawTemp} onClose={()=>setFlawModalOpen(false)} onConfirm={commitFlaw} />
       )}
@@ -1027,7 +1027,7 @@ function FlawReasonsModal({ temp, setTemp, onClose, onConfirm }){
         onClick={e=>e.stopPropagation()}
         onMouseDown={handleDragMouseDown}
       >
-        <div style={modal.title}>Flaw Reasons (multiple select)</div>
+        <div style={modal.title}>Defect Reasons (multiple select)</div>
         <div style={{maxHeight:'60vh',overflow:'auto',paddingRight:6}}>
           {FLAW_GROUPS.map(g=> {
             const open = openGroups[g.key]
