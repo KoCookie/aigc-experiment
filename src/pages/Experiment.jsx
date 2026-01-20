@@ -7,7 +7,7 @@ import supabase from '../supabaseClient'
 const OVERALL_GROUPS = [
   {
     key: 'overall',
-    title: 'Overall Reasons',
+    title: 'Global Reasons',
     items: [
       {
         key: 'style_unreal',
